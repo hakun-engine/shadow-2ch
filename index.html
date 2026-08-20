@@ -1,130 +1,5 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>シャドー2ch（オンライン交信所）</title>
-    <style>
-        body {
-            background-color: #efefef;
-            font-family: "MS UI Gothic", sans-serif;
-            color: #111;
-            margin: 20px;
-        }
-        .board-container {
-            max-width: 700px;
-            margin: 0 auto;
-            background: #fff;
-            border: 1px solid #ccc;
-            padding: 15px;
-            position: relative;
-        }
-        h2 {
-            color: #800;
-            font-size: 1.4em;
-            border-bottom: 2px solid #800;
-            padding-bottom: 5px;
-            margin-top: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-        }
-        .version {
-            font-size: 0.5em;
-            color: #666;
-            font-weight: normal;
-        }
-        .form-area {
-            background: #f0f0f0;
-            padding: 10px;
-            border: 1px solid #ccc;
-            margin-bottom: 20px;
-        }
-        .form-area label {
-            display: inline-block;
-            width: 60px;
-            font-weight: bold;
-        }
-        .form-area input, .form-area textarea {
-            width: calc(100% - 70px);
-            padding: 4px;
-            margin-bottom: 8px;
-            box-sizing: border-box;
-        }
-        .form-area textarea {
-            height: 60px;
-            vertical-align: top;
-        }
-        .post {
-            border-bottom: 1px dashed #ccc;
-            padding: 8px 0;
-            font-size: 0.95em;
-        }
-        .post-num {
-            color: blue;
-            font-weight: bold;
-        }
-        .post-name {
-            color: green;
-            font-weight: bold;
-        }
-        .post-date {
-            color: #666;
-            font-size: 0.85em;
-        }
-        .post-body {
-            margin-top: 4px;
-            white-space: pre-wrap;
-        }
-        button {
-            background: linear-gradient(to bottom, #eee, #ccc);
-            border: 1px solid #777;
-            padding: 4px 15px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        button:active {
-            background: #bbb;
-        }
-        .status {
-            font-size: 0.85em;
-            color: #080;
-            margin-bottom: 10px;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-
-<div class="board-container">
-    <h2>
-        シャドー2ch（オンライン交信所）
-        <span class="version" id="versionDisplay">v1.1.0</span>
-    </h2>
-    <div class="status" id="statusMsg">🌐 接続中...</div>
-
-    <!-- 投稿フォーム -->
-    <div class="form-area">
-        <div>
-            <label>名前:</label>
-            <input type="text" id="nameInput" value="名無しさん＠お腹いっぱい。">
-        </div>
-        <div>
-            <label>本文:</label>
-            <textarea id="msgInput" placeholder="ここに書くとネットの向こうの人にも見えるよ"></textarea>
-        </div>
-        <div style="text-align: right;">
-            <button onclick="postMessage()">書き込む</button>
-        </div>
-    </div>
-
-    <!-- 掲示板スレッド表示エリア -->
-    <div id="threadContainer">
-        <p>読み込み中...</p>
-    </div>
-</div>
-
 <script>
-    const APP_VERSION = "v1.1.0";
+    const APP_VERSION = "v1.2.0";
     const KV_URL = "https://kvdb.io/5Jz3vK2xQ5n3K2xQ5n3K2x/shadow-2ch-messages";
 
     window.onload = function() {
@@ -137,8 +12,12 @@
         
         fetch(KV_URL)
             .then(res => {
+                // 404（まだデータがない状態）は正常な空データとして扱う
+                if (res.status === 404) {
+                    return [];
+                }
                 if (!res.ok) {
-                    throw new Error(`HTTPエラー! ステータス: ${res.status} (${res.statusText})`);
+                    throw new Error(`HTTPエラー! ステータス: ${res.status}`);
                 }
                 return res.json();
             })
@@ -150,7 +29,7 @@
             .catch(err => {
                 console.warn("Load Error:", err);
                 renderMessages([]);
-                document.getElementById("statusMsg").innerText = `🟡 ローカル/オフラインモード (${err.message})`;
+                document.getElementById("statusMsg").innerText = `🟡 オフライン/エラー (${err.message})`;
             });
     }
 
@@ -192,10 +71,9 @@
 
         document.getElementById("statusMsg").innerText = "⏳ 送信中...";
 
-        // 1. 現在のデータを取得してから追加して送信
+        // 1. 現在のデータを取得
         fetch(KV_URL)
             .then(res => {
-                // 初回などでデータが空（404等）の場合の考慮
                 if (res.status === 404) return [];
                 if (!res.ok) throw new Error(`データ取得失敗: ${res.status}`);
                 return res.json().catch(() => []);
@@ -216,7 +94,6 @@
                     document.getElementById("msgInput").value = "";
                     loadBoard();
                 } else {
-                    // ここで具体的なHTTPステータスコードを教えてくれるように変更！
                     throw new Error(`サーバー保存失敗: ステータスコード ${res.status}`);
                 }
             })
@@ -241,6 +118,3 @@
         });
     }
 </script>
-
-</body>
-</html>
