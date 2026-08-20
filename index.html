@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>シャドー2ch（オンライン通信中）</title>
+    <title>シャドー2ch（オンライン交信所）</title>
     <style>
         body {
             background-color: #efefef;
@@ -78,8 +78,9 @@
         }
         .status {
             font-size: 0.85em;
-            color: #555;
+            color: #080;
             margin-bottom: 10px;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -87,7 +88,7 @@
 
 <div class="board-container">
     <h2>シャドー2ch（オンライン交信所）</h2>
-    <div class="status" id="statusMsg">🌐 サーバーと通信中...</div>
+    <div class="status" id="statusMsg">🌐 オンライン接続中...</div>
 
     <!-- 投稿フォーム -->
     <div class="form-area">
@@ -97,7 +98,7 @@
         </div>
         <div>
             <label>本文:</label>
-            <textarea id="msgInput" placeholder="ここに本文を入力すると他の人にも見えるよ"></textarea>
+            <textarea id="msgInput" placeholder="ここに書くとネットの向こうの人にも見えるよ"></textarea>
         </div>
         <div style="text-align: right;">
             <button onclick="postMessage()">書き込む</button>
@@ -111,46 +112,34 @@
 </div>
 
 <script>
-    // 共有用の安全なオンラインストレージ（JSONBinの専用BIN）を使用
-    const BIN_ID = "679069d2ad19ca34f8d9b139"; 
-    const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}/latest`;
-    const PUT_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+    // 誰でも自由にデータを共有できる公開テスト用API（JSONStorage）を使用
+    const API_URL = "https://api.jsonstorage.net/v1/json/00000000-0000-0000-0000-000000000000/shadow-2ch-data"; // ※安全な共有BinURL
+
+    // 代わりにもっとシンプルに動く公共のテスト用ストレージサーバー（Npoint.io）を使うよ！
+    const NPOINT_ID = "38890cf2822a101b0b7c"; // テスト用の共有データID
+    const GET_URL = `https://api.npoint.io/${NPOINT_ID}`;
 
     window.onload = function() {
         fetchMessages();
     };
 
     function fetchMessages() {
-        document.getElementById("statusMsg").innerText = "🌐 サーバーからデータを取得中...";
-        
-        fetch(API_URL, {
-            headers: {
-                // 公開読み取り用の設定
-                'X-Bin-Meta': 'false'
-            }
-        })
+        fetch(GET_URL)
         .then(response => response.json())
         .then(data => {
-            // データを安全に取得（messages配列を取り出す）
-            let messages = [];
-            if (data && data.messages) {
-                messages = data.messages;
-            } else if (data && data.record && data.record.messages) {
-                messages = data.record.messages;
-            }
+            const messages = data.messages || [];
             renderMessages(messages);
-            document.getElementById("statusMsg").innerText = "🟢 オンライン交信準備完了（書き込み可能）";
+            document.getElementById("statusMsginnerText") = "🟢 接続完了：リアルタイム交信中";
         })
         .catch(error => {
             console.error(error);
-            document.getElementById("statusMsg").innerText = "🔴 データの取得に失敗しました";
-            document.getElementById("threadContainer").innerHTML = "<p style='color:red;'>読み込みエラーが発生しました。時間を置いてリロードしてください。</p>";
+            document.getElementById("threadContainer").innerHTML = "<p style='color:red;'>読み込みエラーが発生しました。</p>";
         });
     }
 
     function renderMessages(messages) {
         const container = document.getElementById("threadContainer");
-        if (!messages || messages.length === 0) {
+        if (messages.length === 0) {
             container.innerHTML = "<p>まだ書き込みはありません。最初のレスを投稿してみよう！</p>";
             return;
         }
@@ -162,10 +151,10 @@
                 <div class="post">
                     <div>
                         <span class="post-num">${num}</span>：
-                        <span class="post-name">${escapeHTML(msg.name || "名無しさん")}</span>：
-                        <span class="post-date">${escapeHTML(msg.date || "")}</span>
+                        <span class="post-name">${escapeHTML(msg.name)}</span>：
+                        <span class="post-date">${escapeHTML(msg.date)}</span>
                     </div>
-                    <div class="post-body">${escapeHTML(msg.body || "")}</div>
+                    <div class="post-body">${escapeHTML(msg.body)}</div>
                 </div>
             `;
         });
@@ -182,26 +171,17 @@
         }
 
         const now = new Date();
-        const dateStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}(${['日','月','火','水','木','金','土'][now.getDay()]}） ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+        const dateStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}(${['日','月','火','水','木','金','土'][now.getDay()]}) ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
 
-        document.getElementById("statusMsg").innerText = "⏳ サーバーに送信中...";
-
-        // 1. まず最新データを取得してから書き込む
-        fetch(API_URL, { headers: { 'X-Bin-Meta': 'false' } })
+        // 1. まず最新データを取得
+        fetch(GET_URL)
             .then(res => res.json())
             .then(data => {
-                let messages = [];
-                if (data && data.messages) {
-                    messages = data.messages;
-                } else if (data && data.record && data.record.messages) {
-                    messages = data.record.messages;
-                }
-
-                // 新しい書き込みを追加
+                let messages = data.messages || [];
                 messages.push({ name: name, body: body, date: dateStr });
 
-                // 2. クラウドサーバーへ保存（PUT送信）
-                return fetch(PUT_URL, {
+                // 2. クラウドに保存（Npoint API）
+                return fetch(GET_URL, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -212,21 +192,18 @@
             .then(res => {
                 if (res.ok) {
                     document.getElementById("msgInput").value = "";
-                    fetchMessages(); // 最新状態に再読み込み
+                    fetchMessages(); // 再読み込みして画面に反映
                 } else {
                     alert("書き込みに失敗しました。");
-                    document.getElementById("statusMsg").innerText = "🔴 書き込みエラー";
                 }
             })
             .catch(err => {
-                alert("エラーが発生しました: " + err);
-                document.getElementById("statusMsg").innerText = "🔴 通信エラー";
+                alert("通信エラーが発生しました: " + err);
             });
     }
 
     function escapeHTML(str) {
-        if (!str) return "";
-        return String(str).replace(/[&'`"<>]/g, function(match) {
+        return str.replace(/[&'`"<>]/g, function(match) {
             return {
                 '&': '&amp;',
                 "'": '&#x27;',
