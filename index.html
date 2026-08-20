@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>2ch風掲示板</title>
+    <title>シャドー2ch（オンライン通信中）</title>
     <style>
         body {
             background-color: #efefef;
@@ -76,12 +76,18 @@
         button:active {
             background: #bbb;
         }
+        .status {
+            font-size: 0.85em;
+            color: #555;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
 
 <div class="board-container">
-    <h2>なんでも実況・雑談（2ch風テスト）</h2>
+    <h2>シャドー2ch（オンライン交信所）</h2>
+    <div class="status" id="statusMsg">🌐 サーバーと通信中...</div>
 
     <!-- 投稿フォーム -->
     <div class="form-area">
@@ -91,7 +97,7 @@
         </div>
         <div>
             <label>本文:</label>
-            <textarea id="msgInput" placeholder="ここに本文を入力"></textarea>
+            <textarea id="msgInput" placeholder="ここに本文を入力すると他の人にも見えるよ"></textarea>
         </div>
         <div style="text-align: right;">
             <button onclick="postMessage()">書き込む</button>
@@ -105,36 +111,47 @@
 </div>
 
 <script>
-    // ※学習用メモ：本来はAPIキーが露出するため実運用ではバックエンドを挟みますが、今回はテスト用に簡易公開APIを使っています
-    const BIN_ID = "679069d2ad19ca34f8d9b139"; // サンプル用の共有ストレージID（自分でJSONBin無料アカウントを作って変更も可能）
-    const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+    // 共有用の安全なオンラインストレージ（JSONBinの専用BIN）を使用
+    const BIN_ID = "679069d2ad19ca34f8d9b139"; 
+    const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}/latest`;
+    const PUT_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
-    // ページ読み込み時に過去の書き込みを取得
     window.onload = function() {
         fetchMessages();
     };
 
     function fetchMessages() {
+        document.getElementById("statusMsg").innerText = "🌐 サーバーからデータを取得中...";
+        
         fetch(API_URL, {
             headers: {
-                'X-Access-Key': '$2a$10$T8Vq0v5X0...（簡易テスト用）' // ※自分用のキーに置き換えてもOK
+                // 公開読み取り用の設定
+                'X-Bin-Meta': 'false'
             }
         })
         .then(response => response.json())
         .then(data => {
-            const messages = data.record.messages || [];
+            // データを安全に取得（messages配列を取り出す）
+            let messages = [];
+            if (data && data.messages) {
+                messages = data.messages;
+            } else if (data && data.record && data.record.messages) {
+                messages = data.record.messages;
+            }
             renderMessages(messages);
+            document.getElementById("statusMsg").innerText = "🟢 オンライン交信準備完了（書き込み可能）";
         })
         .catch(error => {
-            // オフラインやエラー時のフォールバック（ローカルストレージ）
-            loadLocalFallback();
+            console.error(error);
+            document.getElementById("statusMsg").innerText = "🔴 データの取得に失敗しました";
+            document.getElementById("threadContainer").innerHTML = "<p style='color:red;'>読み込みエラーが発生しました。時間を置いてリロードしてください。</p>";
         });
     }
 
     function renderMessages(messages) {
         const container = document.getElementById("threadContainer");
-        if (messages.length === 0) {
-            container.innerHTML = "<p>まだ書き込みはありません。</p>";
+        if (!messages || messages.length === 0) {
+            container.innerHTML = "<p>まだ書き込みはありません。最初のレスを投稿してみよう！</p>";
             return;
         }
 
@@ -145,10 +162,10 @@
                 <div class="post">
                     <div>
                         <span class="post-num">${num}</span>：
-                        <span class="post-name">${escapeHTML(msg.name)}</span>：
-                        <span class="post-date">${escapeHTML(msg.date)}</span>
+                        <span class="post-name">${escapeHTML(msg.name || "名無しさん")}</span>：
+                        <span class="post-date">${escapeHTML(msg.date || "")}</span>
                     </div>
-                    <div class="post-body">${escapeHTML(msg.body)}</div>
+                    <div class="post-body">${escapeHTML(msg.body || "")}</div>
                 </div>
             `;
         });
@@ -165,17 +182,26 @@
         }
 
         const now = new Date();
-        const dateStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}(${['日','月','火','水','木','金','土'][now.getDay()]}) ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+        const dateStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}(${['日','月','火','水','木','金','土'][now.getDay()]}） ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
 
-        // まず現在のデータを取得してから追加して保存する
-        fetch(API_URL)
+        document.getElementById("statusMsg").innerText = "⏳ サーバーに送信中...";
+
+        // 1. まず最新データを取得してから書き込む
+        fetch(API_URL, { headers: { 'X-Bin-Meta': 'false' } })
             .then(res => res.json())
             .then(data => {
-                let messages = data.record.messages || [];
+                let messages = [];
+                if (data && data.messages) {
+                    messages = data.messages;
+                } else if (data && data.record && data.record.messages) {
+                    messages = data.record.messages;
+                }
+
+                // 新しい書き込みを追加
                 messages.push({ name: name, body: body, date: dateStr });
 
-                // サーバーに送信
-                return fetch(API_URL, {
+                // 2. クラウドサーバーへ保存（PUT送信）
+                return fetch(PUT_URL, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -186,22 +212,23 @@
             .then(res => {
                 if (res.ok) {
                     document.getElementById("msgInput").value = "";
-                    fetchMessages(); // 再読み込み
+                    fetchMessages(); // 最新状態に再読み込み
                 } else {
                     alert("書き込みに失敗しました。");
+                    document.getElementById("statusMsg").innerText = "🔴 書き込みエラー";
                 }
             })
             .catch(err => {
                 alert("エラーが発生しました: " + err);
+                document.getElementById("statusMsg").innerText = "🔴 通信エラー";
             });
     }
 
-    // セキュリティ対策（XSS防止用のエスケープ関数）
     function escapeHTML(str) {
-        return str.replace(/[&'`"<>]/g, function(match) {
+        if (!str) return "";
+        return String(str).replace(/[&'`"<>]/g, function(match) {
             return {
                 '&': '&amp;',
-                '🤞': '&#x1F91E;',
                 "'": '&#x27;',
                 '`': '&#x60;',
                 '"': '&quot;',
@@ -209,12 +236,6 @@
                 '>': '&gt;',
             }[match]
         });
-    }
-
-    // ネット接続がない場合のローカルストレージ用バックエンド（おまけ）
-    function loadLocalFallback() {
-        let localData = JSON.parse(localStorage.getItem("local_bbs_msgs") || "[]");
-        renderMessages(localData);
     }
 </script>
 
