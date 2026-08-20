@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>シャドー2ch（オンライン）</title>
+    <title>シャドー2ch（オンライン交信所）</title>
     <style>
         body {
             background-color: #efefef;
@@ -16,6 +16,7 @@
             background: #fff;
             border: 1px solid #ccc;
             padding: 15px;
+            position: relative;
         }
         h2 {
             color: #800;
@@ -23,6 +24,14 @@
             border-bottom: 2px solid #800;
             padding-bottom: 5px;
             margin-top: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        .version {
+            font-size: 0.5em;
+            color: #666;
+            font-weight: normal;
         }
         .form-area {
             background: #f0f0f0;
@@ -87,7 +96,10 @@
 <body>
 
 <div class="board-container">
-    <h2>シャドー2ch（オンライン）</h2>
+    <h2>
+        シャドー2ch（オンライン交信所）
+        <span class="version" id="versionDisplay">v1.1.0</span>
+    </h2>
     <div class="status" id="statusMsg">🌐 接続中...</div>
 
     <!-- 投稿フォーム -->
@@ -112,42 +124,33 @@
 </div>
 
 <script>
-    // 誰でもカードなしで使える安全なパブリック共有ストレージを使用
-    // （クロスドメイン制限を回避するため、オープンな公共JSONストレージを利用）
-    const API_URL = "https://api.jsonbin.io/v3/b/679069d2ad19ca34f8d9b139/latest";
-
-    // 代わりにブラウザのlocalStorageとセッションを組み合わせて確実に動くハイブリッド版にするよ！
-    // 別の家の人と通信するために、今回は「WebStorage（Public API）」の代用として
-    // 誰でもアクセスできるオープンな公共テスト用エンドポイントを使うね。
-    const PUBLIC_BIN = "https://point.free.beeceptor.com/messages"; // または共通API
-
-    // ※一番確実でエラーが起きない「JSONPlaceholder / または公開JSONBin」の安全なルート：
-    const DATA_ENDPOINT = "https://httpbin.org/post"; // テスト用
-
-    // 【一番確実な方法】
-    // サーバーの代わりに、無料で誰でもCORSフリーで使えるオープンAPI（例: kvdb.io や 簡易API）を使うのが一番手っ取り早い！
-    // 今回は一番スムーズに動くように、コード内に専用の通信処理を組み込んでいるよ。
+    const APP_VERSION = "v1.1.0";
+    const KV_URL = "https://kvdb.io/5Jz3vK2xQ5n3K2xQ5n3K2x/shadow-2ch-messages";
 
     window.onload = function() {
+        console.log("App Version: " + APP_VERSION);
         loadBoard();
     };
 
     function loadBoard() {
-        // クラウド（localStorageをベースにしつつ、他の端末とも同期できるようにする仕組み）
-        // 完全なクラウド連携をするなら、無料でCORS制限のない「https://kvdb.io/」を使うのがプロの技！
-        const KV_URL = "https://kvdb.io/5Jz3vK2xQ5n3K2xQ5n3K2x/shadow-2ch-messages";
+        document.getElementById("statusMsg").innerText = "⏳ 読み込み中...";
         
         fetch(KV_URL)
-            .then(res => res.json().catch(() => []))
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTPエラー! ステータス: ${res.status} (${res.statusText})`);
+                }
+                return res.json();
+            })
             .then(messages => {
                 if (!Array.isArray(messages)) messages = [];
                 renderMessages(messages);
-                document.getElementById("statusMsg").innerText = "🟢 オンライン交信中（接続OK）";
+                document.getElementById("statusMsg").innerText = `🟢 オンライン交信中 (${APP_VERSION})`;
             })
-            .catch(() => {
-                // 万が一通信できない場合のフォールバック
+            .catch(err => {
+                console.warn("Load Error:", err);
                 renderMessages([]);
-                document.getElementById("statusMsg").innerText = "🟡 ローカルモードで稼働中";
+                document.getElementById("statusMsg").innerText = `🟡 ローカル/オフラインモード (${err.message})`;
             });
     }
 
@@ -187,13 +190,16 @@
         const now = new Date();
         const dateStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}(${['日','月','火','水','木','金','土'][now.getDay()]}) ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
 
-        const KV_URL = "https://kvdb.io/5Jz3vK2xQ5n3K2xQ5n3K2x/shadow-2ch-messages";
-
         document.getElementById("statusMsg").innerText = "⏳ 送信中...";
 
-        // 1. 現在のデータを取得
+        // 1. 現在のデータを取得してから追加して送信
         fetch(KV_URL)
-            .then(res => res.json().catch(() => []))
+            .then(res => {
+                // 初回などでデータが空（404等）の場合の考慮
+                if (res.status === 404) return [];
+                if (!res.ok) throw new Error(`データ取得失敗: ${res.status}`);
+                return res.json().catch(() => []);
+            })
             .then(messages => {
                 if (!Array.isArray(messages)) messages = [];
                 messages.push({ name: name, body: body, date: dateStr });
@@ -210,17 +216,19 @@
                     document.getElementById("msgInput").value = "";
                     loadBoard();
                 } else {
-                    alert("書き込みに失敗しました。");
-                    document.getElementById("statusMsg").innerText = "🔴 書き込みエラー";
+                    // ここで具体的なHTTPステータスコードを教えてくれるように変更！
+                    throw new Error(`サーバー保存失敗: ステータスコード ${res.status}`);
                 }
             })
             .catch(err => {
-                alert("通信エラー: " + err);
-                document.getElementById("statusMsg").innerText = "🔴 通信エラー";
+                console.error("Post Error:", err);
+                alert("書き込みに失敗しました。\n【エラー詳細】: " + err.message);
+                document.getElementById("statusMsg").innerText = "🔴 エラー: " + err.message;
             });
     }
 
     function escapeHTML(str) {
+        if (!str) return "";
         return str.replace(/[&'`"<>]/g, function(match) {
             return {
                 '&': '&amp;',
