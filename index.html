@@ -19,7 +19,8 @@
     }
 
     #loginScreen,
-    #lockScreen {
+    #lockScreen,
+    #roomScreen {
       position: fixed;
       inset: 0;
       background: #f2f2f2;
@@ -30,12 +31,18 @@
     }
 
     #loginBox,
-    #lockBox {
+    #lockBox,
+    #roomBox {
       background: white;
-      width: min(90%, 360px);
+      width: min(92%, 500px);
+      max-height: 90vh;
+      overflow-y: auto;
       padding: 25px;
       border-radius: 15px;
       box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+    }
+
+    #loginBox {
       text-align: center;
     }
 
@@ -58,7 +65,13 @@
       font-size: 13px;
     }
 
-    #lockBox input {
+    #lockBox {
+      text-align: center;
+    }
+
+    #lockBox input,
+    #createRoomName,
+    #createRoomPassword {
       width: 100%;
       padding: 12px;
       margin-top: 15px;
@@ -67,7 +80,8 @@
       font-size: 16px;
     }
 
-    #lockBox button {
+    #lockBox button,
+    #createRoomButton {
       width: 100%;
       margin-top: 10px;
       padding: 12px;
@@ -118,8 +132,35 @@
       cursor: pointer;
     }
 
+    #roomInfo {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+    }
+
+    #roomTitle {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    #roomOwner {
+      color: #777;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    #leaveRoomButton {
+      margin-top: 10px;
+      border: none;
+      border-radius: 7px;
+      padding: 8px 12px;
+      background: #eee;
+      cursor: pointer;
+    }
+
     #onlineUsers {
-      margin-top: 8px;
+      margin-top: 10px;
       color: #555;
       font-size: 13px;
     }
@@ -133,6 +174,8 @@
       border-radius: 12px;
       padding: 10px;
       min-height: 400px;
+      max-height: 65vh;
+      overflow-y: auto;
     }
 
     .message {
@@ -261,6 +304,110 @@
       font-size: 11px;
       margin-top: 15px;
     }
+
+    .sectionTitle {
+      font-weight: bold;
+      margin-top: 20px;
+      margin-bottom: 8px;
+    }
+
+    #roomList {
+      margin-top: 10px;
+    }
+
+    .roomItem {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 8px;
+      background: #fafafa;
+    }
+
+    .roomName {
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .roomMeta {
+      color: #777;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .roomItem button {
+      margin-top: 8px;
+      border: none;
+      border-radius: 7px;
+      padding: 8px 12px;
+      background: #222;
+      color: white;
+      cursor: pointer;
+    }
+
+    .roomDeleteButton {
+      background: #d33 !important;
+      margin-left: 5px;
+    }
+
+    #roomCreateStatus {
+      color: #d00;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    #roomPasswordScreen {
+      position: fixed;
+      inset: 0;
+      background: #f2f2f2;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    }
+
+    #roomPasswordBox {
+      background: white;
+      width: min(90%, 360px);
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+      text-align: center;
+    }
+
+    #roomPasswordInput {
+      width: 100%;
+      padding: 12px;
+      margin-top: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    #roomPasswordEnter,
+    #roomPasswordCancel {
+      width: 100%;
+      margin-top: 10px;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #roomPasswordEnter {
+      background: #222;
+      color: white;
+    }
+
+    #roomPasswordCancel {
+      background: #eee;
+    }
+
+    #roomPasswordError {
+      color: #d00;
+      font-size: 13px;
+      margin-top: 8px;
+      display: none;
+    }
   </style>
 
 </head>
@@ -299,7 +446,9 @@
     placeholder="パスワード"
   >
 
-  <button id="unlockButton">入室</button>
+  <button id="unlockButton">
+    入室
+  </button>
 
   <div id="lockError">
     パスワードが違います
@@ -309,10 +458,111 @@
 
   </div>
 
+  <!-- 部屋一覧 -->
+
+  <div id="roomScreen" style="display:none;">
+    <div id="roomBox">
+
+```
+  <h2>🏠 Hakun Chat</h2>
+
+  <div id="accountAreaRoom">
+    Googleログイン中...
+  </div>
+
+  <div class="sectionTitle">
+    ➕ 部屋を作成
+  </div>
+
+  <input
+    id="createRoomName"
+    type="text"
+    maxlength="30"
+    placeholder="部屋名（30文字以内）"
+  >
+
+  <input
+    id="createRoomPassword"
+    type="password"
+    maxlength="30"
+    placeholder="部屋パスワード（4～30文字）"
+  >
+
+  <button id="createRoomButton">
+    部屋を作成
+  </button>
+
+  <div id="roomCreateStatus"></div>
+
+  <div class="sectionTitle">
+    🏠 部屋一覧
+  </div>
+
+  <div id="roomList">
+    部屋を読み込み中...
+  </div>
+
+  <button id="logoutFromRoomButton" style="
+    width:100%;
+    margin-top:15px;
+    padding:10px;
+    border:none;
+    border-radius:8px;
+    background:#eee;
+    cursor:pointer;
+  ">
+    ログアウト
+  </button>
+
+  <div id="version">
+    Hakun Chat v1.8.0
+  </div>
+
+</div>
+```
+
+  </div>
+
+  <!-- 部屋パスワード -->
+
+  <div id="roomPasswordScreen">
+    <div id="roomPasswordBox">
+
+```
+  <h2>🔐 入室</h2>
+
+  <div id="roomPasswordRoomName"></div>
+
+  <input
+    id="roomPasswordInput"
+    type="password"
+    placeholder="部屋パスワード"
+  >
+
+  <button id="roomPasswordEnter">
+    入室
+  </button>
+
+  <button id="roomPasswordCancel">
+    キャンセル
+  </button>
+
+  <div id="roomPasswordError">
+    パスワードが違います
+  </div>
+
+</div>
+```
+
+  </div>
+
+  <!-- チャット -->
+
   <div id="app">
 
 ```
 <header>
+
   <h1>Hakun Chat</h1>
 
   <div id="accountArea">
@@ -326,10 +576,27 @@
   <div id="onlineUsers">
     オンラインユーザーを取得中...
   </div>
+
 </header>
 
 
+<div id="roomInfo">
+
+  <div id="roomTitle">
+    部屋
+  </div>
+
+  <div id="roomOwner"></div>
+
+  <button id="leaveRoomButton">
+    🚪 部屋を退出
+  </button>
+
+</div>
+
+
 <div id="nameArea">
+
   <input
     id="nameInput"
     type="text"
@@ -340,6 +607,7 @@
   <button id="saveName">
     名前保存
   </button>
+
 </div>
 
 
@@ -374,7 +642,7 @@
 <div id="status"></div>
 
 <div id="version">
-  Hakun Chat v1.7.0
+  Hakun Chat v1.8.0
 </div>
 ```
 
@@ -437,7 +705,7 @@
 
     /*
     ==========================================
-    Firebase Authentication
+    Authentication
     ==========================================
     */
 
@@ -503,8 +771,14 @@
     const accountArea =
       document.getElementById("accountArea");
 
+    const accountAreaRoom =
+      document.getElementById("accountAreaRoom");
+
     const logoutButton =
       document.getElementById("logoutButton");
+
+    const logoutFromRoomButton =
+      document.getElementById("logoutFromRoomButton");
 
     const nameInput =
       document.getElementById("nameInput");
@@ -533,16 +807,73 @@
     const onlineUsersElement =
       document.getElementById("onlineUsers");
 
+    const roomScreen =
+      document.getElementById("roomScreen");
+
+    const roomList =
+      document.getElementById("roomList");
+
+    const createRoomName =
+      document.getElementById("createRoomName");
+
+    const createRoomPassword =
+      document.getElementById("createRoomPassword");
+
+    const createRoomButton =
+      document.getElementById("createRoomButton");
+
+    const roomCreateStatus =
+      document.getElementById("roomCreateStatus");
+
+    const roomTitle =
+      document.getElementById("roomTitle");
+
+    const roomOwner =
+      document.getElementById("roomOwner");
+
+    const leaveRoomButton =
+      document.getElementById("leaveRoomButton");
+
+    const roomPasswordScreen =
+      document.getElementById("roomPasswordScreen");
+
+    const roomPasswordRoomName =
+      document.getElementById("roomPasswordRoomName");
+
+    const roomPasswordInput =
+      document.getElementById("roomPasswordInput");
+
+    const roomPasswordEnter =
+      document.getElementById("roomPasswordEnter");
+
+    const roomPasswordCancel =
+      document.getElementById("roomPasswordCancel");
+
+    const roomPasswordError =
+      document.getElementById("roomPasswordError");
+
 
     /*
     ==========================================
-    Firebase User
+    User
     ==========================================
     */
 
     let currentUser = null;
-
     let userId = null;
+
+
+    /*
+    ==========================================
+    Room
+    ==========================================
+    */
+
+    let currentRoomId = null;
+    let currentRoomData = null;
+
+    let pendingRoomId = null;
+    let pendingRoomData = null;
 
 
     /*
@@ -587,9 +918,15 @@
 
     function getPresenceRef() {
 
+      if (!userId || !currentRoomId) {
+        return null;
+      }
+
       return ref(
         db,
-        "presence/" +
+        "rooms/" +
+        currentRoomId +
+        "/presence/" +
         userId +
         "/" +
         tabId
@@ -637,11 +974,10 @@
       if (
         !presenceRef ||
         !firebaseConnected ||
-        !pageVisible
+        !pageVisible ||
+        !currentRoomId
       ) {
-
         return;
-
       }
 
       const name =
@@ -805,6 +1141,11 @@
         getPresenceRef();
 
 
+      if (!presenceRef) {
+        return;
+      }
+
+
       const connectedRef =
         ref(
           db,
@@ -822,7 +1163,8 @@
 
           if (
             firebaseConnected &&
-            pageVisible
+            pageVisible &&
+            currentRoomId
           ) {
 
             await setOnline();
@@ -871,7 +1213,12 @@
 
 
       onValue(
-        ref(db, "presence"),
+        ref(
+          db,
+          "rooms/" +
+          currentRoomId +
+          "/presence"
+        ),
         snapshot => {
 
           lastPresenceData =
@@ -902,6 +1249,45 @@
 
         }
       );
+
+    }
+
+
+    /*
+    ==========================================
+    SHA-256
+    ==========================================
+    */
+
+    async function hashPassword(
+      password
+    ) {
+
+      const encoder =
+        new TextEncoder();
+
+      const data =
+        encoder.encode(password);
+
+      const hashBuffer =
+        await crypto.subtle.digest(
+          "SHA-256",
+          data
+        );
+
+      const hashArray =
+        Array.from(
+          new Uint8Array(hashBuffer)
+        );
+
+      return hashArray
+        .map(
+          byte =>
+            byte
+              .toString(16)
+              .padStart(2, "0")
+        )
+        .join("");
 
     }
 
@@ -943,6 +1329,14 @@
 
 
           accountArea.textContent =
+            "Google: " +
+            (
+              currentUser.email ||
+              "アカウント"
+            );
+
+
+          accountAreaRoom.textContent =
             "Google: " +
             (
               currentUser.email ||
@@ -1013,6 +1407,14 @@
             );
 
 
+          accountAreaRoom.textContent =
+            "Google: " +
+            (
+              user.email ||
+              "アカウント"
+            );
+
+
           loginScreen.style.display =
             "none";
 
@@ -1026,10 +1428,7 @@
             lockScreen.style.display =
               "none";
 
-            appScreen.style.display =
-              "block";
-
-            startChat();
+            showRoomScreen();
 
           } else {
 
@@ -1052,6 +1451,9 @@
           lockScreen.style.display =
             "none";
 
+          roomScreen.style.display =
+            "none";
+
           appScreen.style.display =
             "none";
 
@@ -1063,47 +1465,790 @@
 
     /*
     ==========================================
-    Logout
+    部屋画面
     ==========================================
     */
 
-    logoutButton.addEventListener(
-      "click",
-      async () => {
+    function showRoomScreen() {
 
-        try {
+      roomScreen.style.display =
+        "flex";
 
-          if (presenceRef) {
+      appScreen.style.display =
+        "none";
 
-            await setOffline();
+      loadRooms();
+
+    }
+
+
+    /*
+    ==========================================
+    部屋一覧
+    ==========================================
+    */
+
+    function loadRooms() {
+
+      onValue(
+        ref(db, "rooms"),
+        snapshot => {
+
+          const rooms =
+            snapshot.val() || {};
+
+          roomList.innerHTML =
+            "";
+
+
+          const entries =
+            Object.entries(rooms);
+
+
+          if (entries.length === 0) {
+
+            roomList.textContent =
+              "まだ部屋がありません。";
+
+            return;
 
           }
 
 
-          await signOut(auth);
+          entries.sort(
+            (a, b) => {
 
+              const timeA =
+                a[1].createdAt || 0;
 
-          sessionStorage.removeItem(
-            "hakunChatUnlocked"
+              const timeB =
+                b[1].createdAt || 0;
+
+              return timeB - timeA;
+
+            }
           );
 
 
-          location.reload();
+          for (
+            const [roomId, room]
+            of entries
+          ) {
+
+            if (!room || !room.name) {
+              continue;
+            }
+
+
+            const item =
+              document.createElement(
+                "div"
+              );
+
+            item.className =
+              "roomItem";
+
+
+            const name =
+              document.createElement(
+                "div"
+              );
+
+            name.className =
+              "roomName";
+
+            name.textContent =
+              "🏠 " + room.name;
+
+            item.appendChild(
+              name
+            );
+
+
+            const meta =
+              document.createElement(
+                "div"
+              );
+
+            meta.className =
+              "roomMeta";
+
+            meta.textContent =
+              room.ownerId === userId
+                ? "👑 あなたが作成した部屋"
+                : "🔐 パスワード付き";
+
+            item.appendChild(
+              meta
+            );
+
+
+            const enterButton =
+              document.createElement(
+                "button"
+              );
+
+            enterButton.textContent =
+              "入室";
+
+            enterButton.addEventListener(
+              "click",
+              () => {
+
+                openRoomPassword(
+                  roomId,
+                  room
+                );
+
+              }
+            );
+
+            item.appendChild(
+              enterButton
+            );
+
+
+            if (
+              room.ownerId === userId
+            ) {
+
+              const deleteButton =
+                document.createElement(
+                  "button"
+                );
+
+              deleteButton.className =
+                "roomDeleteButton";
+
+              deleteButton.textContent =
+                "削除";
+
+              deleteButton.addEventListener(
+                "click",
+                async () => {
+
+                  if (
+                    !confirm(
+                      "この部屋を削除しますか？\n部屋内のメッセージもすべて削除されます。"
+                    )
+                  ) {
+
+                    return;
+
+                  }
+
+
+                  try {
+
+                    await remove(
+                      ref(
+                        db,
+                        "rooms/" +
+                        roomId
+                      )
+                    );
+
+                  } catch (error) {
+
+                    console.error(
+                      "部屋削除エラー:",
+                      error
+                    );
+
+                    alert(
+                      "部屋の削除に失敗しました"
+                    );
+
+                  }
+
+                }
+              );
+
+              item.appendChild(
+                deleteButton
+              );
+
+            }
+
+
+            roomList.appendChild(
+              item
+            );
+
+          }
+
+        },
+        error => {
+
+          console.error(
+            "部屋一覧取得エラー:",
+            error
+          );
+
+          roomList.textContent =
+            "部屋一覧を取得できません";
+
+        }
+      );
+
+    }
+
+
+    /*
+    ==========================================
+    部屋作成
+    ==========================================
+    */
+
+    createRoomButton.addEventListener(
+      "click",
+      async () => {
+
+        const name =
+          createRoomName.value.trim();
+
+        const password =
+          createRoomPassword.value;
+
+
+        roomCreateStatus.textContent =
+          "";
+
+
+        if (!currentUser) {
+
+          roomCreateStatus.textContent =
+            "Googleログインしてください";
+
+          return;
+
+        }
+
+
+        if (!name) {
+
+          roomCreateStatus.textContent =
+            "部屋名を入力してください";
+
+          return;
+
+        }
+
+
+        if (name.length > 30) {
+
+          roomCreateStatus.textContent =
+            "部屋名は30文字以内です";
+
+          return;
+
+        }
+
+
+        if (
+          password.length < 4 ||
+          password.length > 30
+        ) {
+
+          roomCreateStatus.textContent =
+            "パスワードは4～30文字にしてください";
+
+          return;
+
+        }
+
+
+        try {
+
+          createRoomButton.disabled =
+            true;
+
+          createRoomButton.textContent =
+            "作成中...";
+
+
+          const passwordHash =
+            await hashPassword(
+              password
+            );
+
+
+          const roomRef =
+            push(
+              ref(
+                db,
+                "rooms"
+              )
+            );
+
+
+          await set(
+            roomRef,
+            {
+
+              name,
+
+              passwordHash,
+
+              ownerId:
+                userId,
+
+              createdAt:
+                serverTimestamp()
+
+            }
+          );
+
+
+          createRoomName.value =
+            "";
+
+          createRoomPassword.value =
+            "";
+
+
+          roomCreateStatus.style.color =
+            "#080";
+
+          roomCreateStatus.textContent =
+            "部屋を作成しました";
+
+
+          await enterRoom(
+            roomRef.key,
+            {
+              name,
+              passwordHash,
+              ownerId: userId
+            }
+          );
+
 
         } catch (error) {
 
           console.error(
-            "ログアウトエラー:",
+            "部屋作成エラー:",
             error
           );
 
-          alert(
-            "ログアウトに失敗しました"
-          );
+          roomCreateStatus.style.color =
+            "#d00";
+
+          roomCreateStatus.textContent =
+            "部屋の作成に失敗しました";
+
+        } finally {
+
+          createRoomButton.disabled =
+            false;
+
+          createRoomButton.textContent =
+            "部屋を作成";
 
         }
 
       }
+    );
+
+
+    /*
+    ==========================================
+    部屋パスワード画面
+    ==========================================
+    */
+
+    function openRoomPassword(
+      roomId,
+      room
+    ) {
+
+      pendingRoomId =
+        roomId;
+
+      pendingRoomData =
+        room;
+
+      roomPasswordRoomName.textContent =
+        "「" +
+        room.name +
+        "」";
+
+      roomPasswordInput.value =
+        "";
+
+      roomPasswordError.style.display =
+        "none";
+
+      roomPasswordScreen.style.display =
+        "flex";
+
+      roomPasswordInput.focus();
+
+    }
+
+
+    roomPasswordEnter.addEventListener(
+      "click",
+      async () => {
+
+        if (
+          !pendingRoomId ||
+          !pendingRoomData
+        ) {
+
+          return;
+
+        }
+
+
+        const password =
+          roomPasswordInput.value;
+
+
+        if (!password) {
+
+          roomPasswordError.textContent =
+            "パスワードを入力してください";
+
+          roomPasswordError.style.display =
+            "block";
+
+          return;
+
+        }
+
+
+        try {
+
+          const hash =
+            await hashPassword(
+              password
+            );
+
+
+          if (
+            hash !==
+            pendingRoomData.passwordHash
+          ) {
+
+            roomPasswordError.textContent =
+              "パスワードが違います";
+
+            roomPasswordError.style.display =
+              "block";
+
+            return;
+
+          }
+
+
+          roomPasswordScreen.style.display =
+            "none";
+
+
+          await enterRoom(
+            pendingRoomId,
+            pendingRoomData
+          );
+
+
+        } catch (error) {
+
+          console.error(
+            "入室エラー:",
+            error
+          );
+
+          roomPasswordError.textContent =
+            "入室に失敗しました";
+
+          roomPasswordError.style.display =
+            "block";
+
+        }
+
+      }
+    );
+
+
+    roomPasswordInput.addEventListener(
+      "keydown",
+      event => {
+
+        if (
+          event.key === "Enter"
+        ) {
+
+          roomPasswordEnter.click();
+
+        }
+
+      }
+    );
+
+
+    roomPasswordCancel.addEventListener(
+      "click",
+      () => {
+
+        roomPasswordScreen.style.display =
+          "none";
+
+        pendingRoomId =
+          null;
+
+        pendingRoomData =
+          null;
+
+      }
+    );
+
+
+    /*
+    ==========================================
+    部屋入室
+    ==========================================
+    */
+
+    async function enterRoom(
+      roomId,
+      room
+    ) {
+
+      if (!currentUser) {
+        return;
+      }
+
+
+      if (presenceRef) {
+
+        await setOffline();
+
+      }
+
+
+      currentRoomId =
+        roomId;
+
+      currentRoomData =
+        room;
+
+
+      roomTitle.textContent =
+        "🏠 " +
+        (
+          room.name ||
+          "部屋"
+        );
+
+
+      if (
+        room.ownerId === userId
+      ) {
+
+        roomOwner.textContent =
+          "👑 あなたが作成した部屋";
+
+      } else {
+
+        roomOwner.textContent =
+          "";
+
+      }
+
+
+      roomScreen.style.display =
+        "none";
+
+      appScreen.style.display =
+        "block";
+
+
+      startRoomChat();
+
+    }
+
+
+    /*
+    ==========================================
+    部屋チャット開始
+    ==========================================
+    */
+
+    let roomChatStarted =
+      false;
+
+
+    function startRoomChat() {
+
+      roomChatStarted =
+        false;
+
+
+      lastPresenceData =
+        {};
+
+      lastMessageData =
+        null;
+
+
+      presenceRef =
+        getPresenceRef();
+
+
+      setupPresence();
+
+
+      roomChatStarted =
+        true;
+
+
+      onValue(
+        ref(
+          db,
+          "rooms/" +
+          currentRoomId +
+          "/messages"
+        ),
+        snapshot => {
+
+          const data =
+            snapshot.val() || {};
+
+
+          cleanupExpiredImages(
+            data
+          );
+
+
+          renderMessages(
+            data
+          );
+
+        },
+        error => {
+
+          console.error(
+            "Messages取得エラー:",
+            error
+          );
+
+          messagesElement.textContent =
+            "メッセージを取得できません";
+
+        }
+      );
+
+    }
+
+
+    /*
+    ==========================================
+    部屋退出
+    ==========================================
+    */
+
+    leaveRoomButton.addEventListener(
+      "click",
+      async () => {
+
+        if (
+          !confirm(
+            "この部屋から退出しますか？"
+          )
+        ) {
+
+          return;
+
+        }
+
+
+        await leaveRoom();
+
+      }
+    );
+
+
+    async function leaveRoom() {
+
+      await setOffline();
+
+
+      currentRoomId =
+        null;
+
+      currentRoomData =
+        null;
+
+      presenceRef =
+        null;
+
+      lastPresenceData =
+        {};
+
+      lastMessageData =
+        null;
+
+      messagesElement.innerHTML =
+        "";
+
+      onlineUsersElement.textContent =
+        "オンラインユーザーを取得中...";
+
+
+      appScreen.style.display =
+        "none";
+
+      showRoomScreen();
+
+    }
+
+
+    /*
+    ==========================================
+    Logout
+    ==========================================
+    */
+
+    async function logout() {
+
+      try {
+
+        await setOffline();
+
+        await signOut(auth);
+
+        sessionStorage.removeItem(
+          "hakunChatUnlocked"
+        );
+
+        location.reload();
+
+      } catch (error) {
+
+        console.error(
+          "ログアウトエラー:",
+          error
+        );
+
+        alert(
+          "ログアウトに失敗しました"
+        );
+
+      }
+
+    }
+
+
+    logoutButton.addEventListener(
+      "click",
+      logout
+    );
+
+
+    logoutFromRoomButton.addEventListener(
+      "click",
+      logout
     );
 
 
@@ -1128,10 +2273,7 @@
         lockScreen.style.display =
           "none";
 
-        appScreen.style.display =
-          "block";
-
-        startChat();
+        showRoomScreen();
 
       } else {
 
@@ -1457,10 +2599,17 @@
           message.imageExpiresAt
         ) {
 
+          if (!currentRoomId) {
+            continue;
+          }
+
+
           remove(
             ref(
               db,
-              "messages/" +
+              "rooms/" +
+              currentRoomId +
+              "/messages/" +
               key
             )
           ).catch(
@@ -1694,7 +2843,9 @@
                   await remove(
                     ref(
                       db,
-                      "messages/" +
+                      "rooms/" +
+                      currentRoomId +
+                      "/messages/" +
                       key
                     )
                   );
@@ -1764,6 +2915,17 @@
       }
 
 
+      if (!currentRoomId) {
+
+        alert(
+          "先に部屋へ入室してください"
+        );
+
+        return;
+
+      }
+
+
       if (!name) {
 
         alert(
@@ -1788,7 +2950,9 @@
           push(
             ref(
               db,
-              "messages"
+              "rooms/" +
+              currentRoomId +
+              "/messages"
             )
           );
 
@@ -1896,7 +3060,8 @@
 
         if (
           firebaseConnected &&
-          pageVisible
+          pageVisible &&
+          currentRoomId
         ) {
 
           await setOnline();
@@ -1950,6 +3115,20 @@
 
           alert(
             "Googleログインしてください"
+          );
+
+          imageInput.value =
+            "";
+
+          return;
+
+        }
+
+
+        if (!currentRoomId) {
+
+          alert(
+            "先に部屋へ入室してください"
           );
 
           imageInput.value =
@@ -2030,7 +3209,9 @@
             push(
               ref(
                 db,
-                "messages"
+                "rooms/" +
+                currentRoomId +
+                "/messages"
               )
             );
 
@@ -2096,64 +3277,6 @@
 
       }
     );
-
-
-    /*
-    ==========================================
-    Chat Start
-    ==========================================
-    */
-
-    let chatStarted = false;
-
-
-    function startChat() {
-
-      if (chatStarted) {
-        return;
-      }
-
-      chatStarted = true;
-
-
-      setupPresence();
-
-
-      onValue(
-        ref(
-          db,
-          "messages"
-        ),
-        snapshot => {
-
-          const data =
-            snapshot.val() || {};
-
-
-          cleanupExpiredImages(
-            data
-          );
-
-
-          renderMessages(
-            data
-          );
-
-        },
-        error => {
-
-          console.error(
-            "Messages取得エラー:",
-            error
-          );
-
-          messagesElement.textContent =
-            "メッセージを取得できません";
-
-        }
-      );
-
-    }
 
   </script>
 
