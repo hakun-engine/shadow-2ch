@@ -610,7 +610,7 @@
   </button>
 
   <div id="version">
-    Hakun Chat v1.9.0
+    Hakun Chat v2.0.0
   </div>
 
 </div>
@@ -727,7 +727,7 @@
 <div id="status"></div>
 
 <div id="version">
-  Hakun Chat v1.9.0
+  Hakun Chat v2.0.0
 </div>
 ```
 
@@ -959,9 +959,7 @@
 
     function isAdmin() {
 
-      return (
-        userId === ADMIN_UID
-      );
+      return userId === ADMIN_UID;
 
     }
 
@@ -1653,12 +1651,22 @@
             meta.className =
               "roomMeta";
 
+
             if (
               room.ownerId === userId
             ) {
 
               meta.textContent =
                 "👑 あなたが作成した部屋";
+
+            } else if (
+              isAdmin()
+            ) {
+
+              meta.textContent =
+                room.passwordHash
+                  ? "👑 管理者モード・🔐 パスワード付き"
+                  : "👑 管理者モード・🔓 パスワードなし";
 
             } else if (
               room.passwordHash
@@ -1685,14 +1693,19 @@
               );
 
             enterButton.textContent =
-              "入室";
+              isAdmin() &&
+              room.passwordHash
+                ? "👑 管理者入室"
+                : "入室";
+
 
             enterButton.addEventListener(
               "click",
               () => {
 
                 if (
-                  room.passwordHash
+                  room.passwordHash &&
+                  !isAdmin()
                 ) {
 
                   openRoomPassword(
@@ -1768,6 +1781,7 @@
                         roomId
                       )
                     );
+
 
                     if (
                       currentRoomId ===
@@ -1845,6 +1859,7 @@
       if (!isAdmin()) {
         return;
       }
+
 
       onValue(
         ref(db, "rooms"),
@@ -1973,6 +1988,68 @@
 
         item.appendChild(
           meta
+        );
+
+
+        const enterButton =
+          document.createElement(
+            "button"
+          );
+
+        enterButton.style.marginTop =
+          "7px";
+
+        enterButton.style.marginRight =
+          "5px";
+
+        enterButton.style.border =
+          "none";
+
+        enterButton.style.borderRadius =
+          "6px";
+
+        enterButton.style.padding =
+          "7px 10px";
+
+        enterButton.style.background =
+          "#222";
+
+        enterButton.style.color =
+          "white";
+
+        enterButton.style.cursor =
+          "pointer";
+
+        enterButton.textContent =
+          "👑 管理者入室";
+
+
+        enterButton.addEventListener(
+          "click",
+          () => {
+
+            if (!isAdmin()) {
+
+              alert(
+                "管理者権限がありません"
+              );
+
+              return;
+
+            }
+
+
+            enterRoom(
+              roomId,
+              room
+            );
+
+          }
+        );
+
+
+        item.appendChild(
+          enterButton
         );
 
 
@@ -2258,6 +2335,18 @@
       room
     ) {
 
+      if (isAdmin()) {
+
+        enterRoom(
+          roomId,
+          room
+        );
+
+        return;
+
+      }
+
+
       pendingRoomId =
         roomId;
 
@@ -2291,6 +2380,33 @@
           !pendingRoomId ||
           !pendingRoomData
         ) {
+
+          return;
+
+        }
+
+
+        if (isAdmin()) {
+
+          roomPasswordScreen.style.display =
+            "none";
+
+          const roomId =
+            pendingRoomId;
+
+          const roomData =
+            pendingRoomData;
+
+          pendingRoomId =
+            null;
+
+          pendingRoomData =
+            null;
+
+          await enterRoom(
+            roomId,
+            roomData
+          );
 
           return;
 
@@ -2342,9 +2458,22 @@
             "none";
 
 
+          const roomId =
+            pendingRoomId;
+
+          const roomData =
+            pendingRoomData;
+
+          pendingRoomId =
+            null;
+
+          pendingRoomData =
+            null;
+
+
           await enterRoom(
-            pendingRoomId,
-            pendingRoomData
+            roomId,
+            roomData
           );
 
 
