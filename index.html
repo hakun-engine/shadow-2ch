@@ -20,6 +20,14 @@
       text-align: center;
     }
 
+    /* バージョン表示 */
+    #version {
+      text-align: center;
+      color: #777;
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+
     #messages {
       border: 1px solid #ccc;
       border-radius: 10px;
@@ -61,6 +69,9 @@
 
   <h1>💬 Hakun Chat</h1>
 
+  <!-- バージョン -->
+  <div id="version">Version 1.1.0</div>
+
   <div id="messages"></div>
 
   <input
@@ -74,6 +85,20 @@
 
   <script type="module">
 
+    // =========================
+    // バージョン
+    // =========================
+
+    const VERSION = "1.1.0";
+
+    document.getElementById("version").textContent =
+      "Version " + VERSION;
+
+
+    // =========================
+    // Firebase
+    // =========================
+
     import { initializeApp }
       from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
 
@@ -86,7 +111,6 @@
       from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
 
 
-    // Firebase設定
     const firebaseConfig = {
       apiKey: "AIzaSyAzwGUhz54-qSaSMTq-l0PTsr0eyr3Rhsk",
       authDomain: "chat-973d6.firebaseapp.com",
@@ -98,11 +122,9 @@
     };
 
 
-    // Firebaseを起動
     const app = initializeApp(firebaseConfig);
 
 
-    // ★ Realtime Databaseに接続
     const db = getDatabase(
       app,
       "https://chat-973d6-default-rtdb.asia-southeast1.firebasedatabase.app/"
@@ -112,12 +134,24 @@
     const messagesRef = ref(db, "messages");
 
 
-    const input = document.getElementById("messageInput");
-    const button = document.getElementById("sendButton");
-    const messages = document.getElementById("messages");
+    // =========================
+    // HTML
+    // =========================
+
+    const input =
+      document.getElementById("messageInput");
+
+    const button =
+      document.getElementById("sendButton");
+
+    const messages =
+      document.getElementById("messages");
 
 
+    // =========================
     // メッセージ送信
+    // =========================
+
     function sendMessage() {
 
       const text = input.value.trim();
@@ -131,37 +165,52 @@
 
       input.value = "";
       input.focus();
+
     }
 
 
-    button.addEventListener("click", sendMessage);
+    button.addEventListener(
+      "click",
+      sendMessage
+    );
 
 
-    input.addEventListener("keydown", (event) => {
+    input.addEventListener(
+      "keydown",
+      (event) => {
 
-      if (event.key === "Enter") {
-        sendMessage();
+        if (event.key === "Enter") {
+          sendMessage();
+        }
+
       }
+    );
 
-    });
 
-
+    // =========================
     // リアルタイム受信
-    onChildAdded(messagesRef, (snapshot) => {
+    // =========================
 
-      const data = snapshot.val();
+    onChildAdded(
+      messagesRef,
+      (snapshot) => {
 
-      const message = document.createElement("div");
+        const data = snapshot.val();
 
-      message.className = "message";
+        const message =
+          document.createElement("div");
 
-      message.textContent = data.text;
+        message.className = "message";
 
-      messages.appendChild(message);
+        message.textContent = data.text;
 
-      messages.scrollTop = messages.scrollHeight;
+        messages.appendChild(message);
 
-    });
+        messages.scrollTop =
+          messages.scrollHeight;
+
+      }
+    );
 
   </script>
 
