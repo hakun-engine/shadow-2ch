@@ -83,14 +83,22 @@
     }
 
     #online {
-      color: #168a35;
       font-size: 14px;
     }
 
     #onlineUsers {
-      margin-top: 5px;
+      margin-top: 8px;
       color: #555;
       font-size: 13px;
+    }
+
+    .onlineUser {
+      margin: 3px 0;
+    }
+
+    .onlineDot {
+      font-size: 12px;
+      margin-right: 4px;
     }
 
     #messages {
@@ -116,6 +124,12 @@
 
     .messageTime {
       color: #888;
+      font-size: 11px;
+      margin-left: 5px;
+      font-weight: normal;
+    }
+
+    .userStatus {
       font-size: 11px;
       margin-left: 5px;
       font-weight: normal;
@@ -244,19 +258,21 @@
     </div>
   </div>
 
+
   <div id="app">
 
     <header>
       <h1>Hakun Chat</h1>
 
       <div id="online">
-        ● オンライン
+        ● 接続確認中...
       </div>
 
       <div id="onlineUsers">
-        オンライン人数を取得中...
+        オンラインユーザーを取得中...
       </div>
     </header>
+
 
     <div id="nameArea">
       <input
@@ -271,7 +287,9 @@
       </button>
     </div>
 
+
     <div id="messages"></div>
+
 
     <div id="sendArea">
 
@@ -290,26 +308,29 @@
 
     </div>
 
+
     <input
       id="imageInput"
       type="file"
       accept="image/*"
     >
 
+
     <div id="status"></div>
 
     <div id="version">
-      Hakun Chat v1.5.0
+      Hakun Chat v1.5.5
     </div>
 
   </div>
 
+
   <script type="module">
 
     /*
-      ==========================================
-      Firebase
-      ==========================================
+    ==========================================
+    Firebase
+    ==========================================
     */
 
     import { initializeApp } from
@@ -339,37 +360,43 @@
     };
 
 
-    const app = initializeApp(firebaseConfig);
+    const app =
+      initializeApp(firebaseConfig);
 
-    const db = getDatabase(
-      app,
-      "https://chat-973d6-default-rtdb.asia-southeast1.firebasedatabase.app/"
-    );
+
+    const db =
+      getDatabase(
+        app,
+        "https://chat-973d6-default-rtdb.asia-southeast1.firebasedatabase.app/"
+      );
 
 
     /*
-      ==========================================
-      設定
-      ==========================================
+    ==========================================
+    設定
+    ==========================================
     */
 
-    const PASSWORD = "fackfack";
+    const PASSWORD =
+      "fackfack";
 
-    const IMAGE_EXPIRE_TIME = 60 * 60 * 1000;
+    const IMAGE_EXPIRE_TIME =
+      60 * 60 * 1000;
 
-    // 元画像の最大サイズ
-    const MAX_ORIGINAL_SIZE = 5 * 1024 * 1024;
+    const MAX_ORIGINAL_SIZE =
+      5 * 1024 * 1024;
 
-    // Firebaseに保存するBase64化前の安全目標
-    const MAX_COMPRESSED_SIZE = 650 * 1024;
+    const MAX_COMPRESSED_SIZE =
+      650 * 1024;
 
-    const MAX_IMAGE_SIDE = 1600;
+    const MAX_IMAGE_SIDE =
+      1600;
 
 
     /*
-      ==========================================
-      DOM
-      ==========================================
+    ==========================================
+    DOM
+    ==========================================
     */
 
     const lockScreen =
@@ -411,18 +438,24 @@
     const statusElement =
       document.getElementById("status");
 
+    const onlineElement =
+      document.getElementById("online");
+
     const onlineUsersElement =
       document.getElementById("onlineUsers");
 
 
     /*
-      ==========================================
-      User ID
-      ==========================================
+    ==========================================
+    User ID
+    ==========================================
     */
 
     let userId =
-      localStorage.getItem("hakunChatUserId");
+      localStorage.getItem(
+        "hakunChatUserId"
+      );
+
 
     if (!userId) {
 
@@ -438,53 +471,417 @@
 
 
     /*
-      ==========================================
-      Name
-      ==========================================
+    ==========================================
+    TAB ID
+    ==========================================
+    
+    ユーザーIDとは別に「このタブ専用ID」を作る。
+    複数タブを開いても、それぞれ独立してオンライン判定できる。
     */
 
-    nameInput.value =
-      localStorage.getItem("hakunChatName") || "";
-
-
-    saveName.addEventListener(
-      "click",
-      () => {
-
-        const name =
-          nameInput.value.trim();
-
-        if (!name) {
-
-          alert("名前を入力してください");
-
-          return;
-        }
-
-        localStorage.setItem(
-          "hakunChatName",
-          name
-        );
-
-        updatePresenceName(name);
-
-        statusElement.textContent =
-          "名前を保存しました";
-
-      }
-    );
+    const tabId =
+      crypto.randomUUID();
 
 
     /*
-      ==========================================
-      Password
-      ==========================================
+    ==========================================
+    Name
+    ==========================================
+    */
+
+    nameInput.value =
+      localStorage.getItem(
+        "hakunChatName"
+      ) || "";
+
+
+    /*
+    ==========================================
+    Presence
+    ==========================================
+    */
+
+    let presenceRef = null;
+
+    let firebaseConnected = false;
+
+    let pageVisible =
+      document.visibilityState === "visible";
+
+
+    function getPresenceRef() {
+
+      return ref(
+        db,
+        "presence/" +
+        userId +
+        "/" +
+        tabId
+      );
+
+    }
+
+
+    async function setOffline() {
+
+      if (!presenceRef) {
+        return;
+      }
+
+      try {
+
+        await set(
+          presenceRef,
+          {
+            name:
+              nameInput.value.trim() ||
+              "名無し",
+
+            online: false,
+
+            lastChanged:
+              serverTimestamp()
+          }
+        );
+
+      } catch (error) {
+
+        console.error(
+          "offline設定エラー:",
+          error
+        );
+
+      }
+
+    }
+
+
+    async function setOnline() {
+
+      if (
+        !presenceRef ||
+        !firebaseConnected ||
+        !pageVisible
+      ) {
+
+        return;
+
+      }
+
+      const name =
+        nameInput.value.trim() ||
+        "名無し";
+
+
+      /*
+        通信が切れた場合の保険
+      */
+
+      await onDisconnect(
+        presenceRef
+      ).set({
+
+        name,
+
+        online: false,
+
+        lastChanged:
+          serverTimestamp()
+
+      });
+
+
+      /*
+        現在オンライン
+      */
+
+      await set(
+        presenceRef,
+        {
+
+          name,
+
+          online: true,
+
+          lastChanged:
+            serverTimestamp()
+
+        }
+      );
+
+    }
+
+
+    function setupPresence() {
+
+      presenceRef =
+        getPresenceRef();
+
+
+      /*
+        Firebaseとの接続状態
+      */
+
+      const connectedRef =
+        ref(
+          db,
+          ".info/connected"
+        );
+
+
+      onValue(
+        connectedRef,
+        async (snapshot) => {
+
+          firebaseConnected =
+            snapshot.val() === true;
+
+
+          if (
+            firebaseConnected &&
+            pageVisible
+          ) {
+
+            onlineElement.textContent =
+              "● オンライン";
+
+            await setOnline();
+
+          } else {
+
+            onlineElement.textContent =
+              "● オフライン";
+
+            await setOffline();
+
+          }
+
+        }
+      );
+
+
+      /*
+        ページの表示状態
+      */
+
+      document.addEventListener(
+        "visibilitychange",
+        async () => {
+
+          pageVisible =
+            document.visibilityState ===
+            "visible";
+
+
+          if (pageVisible) {
+
+            /*
+              ページに戻ってきた
+            */
+
+            onlineElement.textContent =
+              "● 接続確認中...";
+
+            await setOnline();
+
+          } else {
+
+            /*
+              ホーム画面、
+              別アプリ、
+              別タブなど
+            */
+
+            onlineElement.textContent =
+              "● オフライン";
+
+            await setOffline();
+
+          }
+
+        }
+      );
+
+
+      /*
+        タブを閉じる直前の保険
+      */
+
+      window.addEventListener(
+        "pagehide",
+        () => {
+
+          setOffline();
+
+        }
+      );
+
+
+      /*
+        presence全体を監視
+      */
+
+      onValue(
+        ref(db, "presence"),
+        (snapshot) => {
+
+          const data =
+            snapshot.val() || {};
+
+          const users = {};
+
+
+          /*
+            ユーザーごとに
+            onlineなタブが1つでもあれば
+            そのユーザーをオンラインにする
+          */
+
+          for (
+            const [uid, tabs]
+            of Object.entries(data)
+          ) {
+
+            if (!tabs) {
+              continue;
+            }
+
+
+            const onlineTab =
+              Object.values(tabs)
+                .find(
+                  tab =>
+                    tab &&
+                    tab.online === true
+                );
+
+
+            if (onlineTab) {
+
+              users[uid] =
+                onlineTab.name ||
+                "名無し";
+
+            }
+
+          }
+
+
+          const userList =
+            Object.values(users);
+
+
+          onlineUsersElement.innerHTML =
+            "";
+
+
+          if (userList.length === 0) {
+
+            onlineUsersElement.textContent =
+              "オンライン: 0人";
+
+            return;
+
+          }
+
+
+          const title =
+            document.createElement("div");
+
+          title.textContent =
+            `オンライン: ${userList.length}人`;
+
+          onlineUsersElement.appendChild(
+            title
+          );
+
+
+          for (
+            const name of userList
+          ) {
+
+            const user =
+              document.createElement("div");
+
+            user.className =
+              "onlineUser";
+
+            user.textContent =
+              "🟢 " + name;
+
+            onlineUsersElement.appendChild(
+              user
+            );
+
+          }
+
+
+          /*
+            メッセージの名前横の
+            オンライン表示も更新
+          */
+
+          renderCurrentMessages =
+            lastMessageData;
+
+          if (lastMessageData) {
+
+            renderMessages(
+              lastMessageData
+            );
+
+          }
+
+        }
+      );
+
+    }
+
+
+    /*
+    ==========================================
+    メッセージ用オンライン判定
+    ==========================================
+    */
+
+    let lastPresenceData = {};
+
+    let lastMessageData = null;
+
+    let renderCurrentMessages = null;
+
+
+    function isUserOnline(
+      targetUserId
+    ) {
+
+      const tabs =
+        lastPresenceData[
+          targetUserId
+        ] || {};
+
+
+      return Object.values(tabs)
+        .some(
+          tab =>
+            tab &&
+            tab.online === true
+        );
+
+    }
+
+
+    /*
+    ==========================================
+    Password
+    ==========================================
     */
 
     function unlock() {
 
       if (
-        passwordInput.value === PASSWORD
+        passwordInput.value ===
+        PASSWORD
       ) {
 
         sessionStorage.setItem(
@@ -520,7 +917,9 @@
       "keydown",
       (event) => {
 
-        if (event.key === "Enter") {
+        if (
+          event.key === "Enter"
+        ) {
 
           unlock();
 
@@ -548,9 +947,9 @@
 
 
     /*
-      ==========================================
-      Utility
-      ==========================================
+    ==========================================
+    Utility
+    ==========================================
     */
 
     function getCurrentTime() {
@@ -570,9 +969,9 @@
 
 
     /*
-      ==========================================
-      画像圧縮
-      ==========================================
+    ==========================================
+    画像圧縮
+    ==========================================
     */
 
     async function compressImage(file) {
@@ -588,8 +987,10 @@
 
       }
 
+
       const bitmap =
         await createImageBitmap(file);
+
 
       let width =
         bitmap.width;
@@ -598,26 +999,33 @@
         bitmap.height;
 
 
-      /*
-        長辺を1600px以下にする
-      */
-
       const scale =
         Math.min(
           1,
           MAX_IMAGE_SIDE /
-          Math.max(width, height)
+          Math.max(
+            width,
+            height
+          )
         );
 
+
       width =
-        Math.round(width * scale);
+        Math.round(
+          width * scale
+        );
 
       height =
-        Math.round(height * scale);
+        Math.round(
+          height * scale
+        );
 
 
       const canvas =
-        document.createElement("canvas");
+        document.createElement(
+          "canvas"
+        );
+
 
       canvas.width =
         width;
@@ -629,6 +1037,7 @@
       const ctx =
         canvas.getContext("2d");
 
+
       ctx.drawImage(
         bitmap,
         0,
@@ -638,22 +1047,16 @@
       );
 
 
-      /*
-        JPEG品質を下げながら
-        650KB以下を目指す
-      */
-
-      const qualities =
-        [
-          0.85,
-          0.80,
-          0.75,
-          0.70,
-          0.65,
-          0.60,
-          0.55,
-          0.50
-        ];
+      const qualities = [
+        0.85,
+        0.80,
+        0.75,
+        0.70,
+        0.65,
+        0.60,
+        0.55,
+        0.50
+      ];
 
 
       for (
@@ -662,7 +1065,7 @@
 
         const blob =
           await new Promise(
-            (resolve) => {
+            resolve => {
 
               canvas.toBlob(
                 resolve,
@@ -680,6 +1083,8 @@
           MAX_COMPRESSED_SIZE
         ) {
 
+          bitmap.close();
+
           return blob;
 
         }
@@ -688,8 +1093,8 @@
 
 
       /*
-        まだ大きい場合は
-        画像サイズ自体をさらに下げる
+        650KBを超えたら
+        解像度も下げる
       */
 
       let currentWidth =
@@ -734,7 +1139,7 @@
 
         const blob =
           await new Promise(
-            (resolve) => {
+            resolve => {
 
               canvas.toBlob(
                 resolve,
@@ -752,11 +1157,16 @@
           MAX_COMPRESSED_SIZE
         ) {
 
+          bitmap.close();
+
           return blob;
 
         }
 
       }
+
+
+      bitmap.close();
 
 
       throw new Error(
@@ -767,9 +1177,9 @@
 
 
     /*
-      ==========================================
-      Blob → Base64
-      ==========================================
+    ==========================================
+    Blob → Base64
+    ==========================================
     */
 
     function blobToBase64(blob) {
@@ -780,15 +1190,20 @@
           const reader =
             new FileReader();
 
+
           reader.onload =
             () => resolve(
               reader.result
             );
 
+
           reader.onerror =
             reject;
 
-          reader.readAsDataURL(blob);
+
+          reader.readAsDataURL(
+            blob
+          );
 
         }
       );
@@ -797,9 +1212,9 @@
 
 
     /*
-      ==========================================
-      期限切れ画像の削除
-      ==========================================
+    ==========================================
+    期限切れ画像削除
+    ==========================================
     */
 
     function cleanupExpiredImages(
@@ -812,7 +1227,9 @@
 
       for (
         const [key, message]
-        of Object.entries(data || {})
+        of Object.entries(
+          data || {}
+        )
       ) {
 
         if (
@@ -825,10 +1242,11 @@
           remove(
             ref(
               db,
-              "messages/" + key
+              "messages/" +
+              key
             )
           ).catch(
-            (error) => {
+            error => {
 
               console.error(
                 "画像削除エラー:",
@@ -846,20 +1264,27 @@
 
 
     /*
-      ==========================================
-      メッセージ表示
-      ==========================================
+    ==========================================
+    メッセージ表示
+    ==========================================
     */
 
     function renderMessages(
       data
     ) {
 
-      messagesElement.innerHTML = "";
+      lastMessageData =
+        data;
+
+
+      messagesElement.innerHTML =
+        "";
 
 
       const entries =
-        Object.entries(data || {});
+        Object.entries(
+          data || {}
+        );
 
 
       entries.sort(
@@ -882,10 +1307,6 @@
         of entries
       ) {
 
-        /*
-          期限切れ画像は表示しない
-        */
-
         if (
           message.image &&
           message.imageExpiresAt &&
@@ -899,25 +1320,67 @@
 
 
         const div =
-          document.createElement("div");
+          document.createElement(
+            "div"
+          );
 
         div.className =
           "message";
 
 
         const name =
-          document.createElement("div");
+          document.createElement(
+            "div"
+          );
 
         name.className =
           "messageName";
+
 
         name.textContent =
           message.name ||
           "名無し";
 
 
+        /*
+          ユーザーのオンライン状態
+        */
+
+        const status =
+          document.createElement(
+            "span"
+          );
+
+        status.className =
+          "userStatus";
+
+
+        if (
+          isUserOnline(
+            message.userId
+          )
+        ) {
+
+          status.textContent =
+            "🟢";
+
+        } else {
+
+          status.textContent =
+            "⚫";
+
+        }
+
+
+        name.appendChild(
+          status
+        );
+
+
         const time =
-          document.createElement("span");
+          document.createElement(
+            "span"
+          );
 
         time.className =
           "messageTime";
@@ -926,20 +1389,28 @@
           message.time || "";
 
 
-        name.appendChild(time);
+        name.appendChild(
+          time
+        );
 
 
-        div.appendChild(name);
+        div.appendChild(
+          name
+        );
 
 
         /*
           テキスト
         */
 
-        if (message.text) {
+        if (
+          message.text
+        ) {
 
           const text =
-            document.createElement("div");
+            document.createElement(
+              "div"
+            );
 
           text.className =
             "messageText";
@@ -947,7 +1418,9 @@
           text.textContent =
             message.text;
 
-          div.appendChild(text);
+          div.appendChild(
+            text
+          );
 
         }
 
@@ -956,10 +1429,14 @@
           画像
         */
 
-        if (message.image) {
+        if (
+          message.image
+        ) {
 
           const image =
-            document.createElement("img");
+            document.createElement(
+              "img"
+            );
 
           image.className =
             "messageImage";
@@ -973,13 +1450,15 @@
           image.loading =
             "lazy";
 
-          div.appendChild(image);
+          div.appendChild(
+            image
+          );
 
         }
 
 
         /*
-          自分のメッセージだけ削除可能
+          自分のメッセージ
         */
 
         if (
@@ -987,13 +1466,16 @@
         ) {
 
           const deleteButton =
-            document.createElement("button");
+            document.createElement(
+              "button"
+            );
 
           deleteButton.className =
             "deleteButton";
 
           deleteButton.textContent =
             "削除";
+
 
           deleteButton.addEventListener(
             "click",
@@ -1008,7 +1490,8 @@
                 await remove(
                   ref(
                     db,
-                    "messages/" + key
+                    "messages/" +
+                    key
                   )
                 );
 
@@ -1016,6 +1499,7 @@
 
             }
           );
+
 
           div.appendChild(
             deleteButton
@@ -1031,10 +1515,6 @@
       }
 
 
-      /*
-        一番下へ
-      */
-
       messagesElement.scrollTop =
         messagesElement.scrollHeight;
 
@@ -1042,9 +1522,9 @@
 
 
     /*
-      ==========================================
-      テキスト送信
-      ==========================================
+    ==========================================
+    テキスト送信
+    ==========================================
     */
 
     async function sendText() {
@@ -1076,20 +1556,29 @@
 
       const messageRef =
         push(
-          ref(db, "messages")
+          ref(
+            db,
+            "messages"
+          )
         );
 
 
       await set(
         messageRef,
         {
+
           name,
+
           text,
+
           time:
             getCurrentTime(),
+
           timestamp:
             serverTimestamp(),
+
           userId
+
         }
       );
 
@@ -1107,14 +1596,14 @@
 
 
     /*
-      ==========================================
-      Enter送信
-      ==========================================
+    ==========================================
+    Enter送信
+    ==========================================
     */
 
     messageInput.addEventListener(
       "keydown",
-      (event) => {
+      event => {
 
         if (
           event.key === "Enter" &&
@@ -1132,9 +1621,62 @@
 
 
     /*
-      ==========================================
-      画像選択
-      ==========================================
+    ==========================================
+    名前保存
+    ==========================================
+    */
+
+    saveName.addEventListener(
+      "click",
+      async () => {
+
+        const name =
+          nameInput.value.trim();
+
+
+        if (!name) {
+
+          alert(
+            "名前を入力してください"
+          );
+
+          return;
+
+        }
+
+
+        localStorage.setItem(
+          "hakunChatName",
+          name
+        );
+
+
+        /*
+          オンライン中なら
+          Firebase上の名前も更新
+        */
+
+        if (
+          firebaseConnected &&
+          pageVisible
+        ) {
+
+          await setOnline();
+
+        }
+
+
+        statusElement.textContent =
+          "名前を保存しました";
+
+      }
+    );
+
+
+    /*
+    ==========================================
+    画像送信
+    ==========================================
     */
 
     imageButton.addEventListener(
@@ -1153,6 +1695,7 @@
 
         const file =
           imageInput.files[0];
+
 
         if (!file) {
 
@@ -1180,7 +1723,9 @@
 
 
         if (
-          !file.type.startsWith("image/")
+          !file.type.startsWith(
+            "image/"
+          )
         ) {
 
           alert(
@@ -1209,11 +1754,13 @@
 
 
           const compressed =
-            await compressImage(file);
+            await compressImage(
+              file
+            );
 
 
           statusElement.textContent =
-            "画像をアップロード中...";
+            "画像を準備中...";
 
 
           const base64 =
@@ -1229,23 +1776,35 @@
 
           const messageRef =
             push(
-              ref(db, "messages")
+              ref(
+                db,
+                "messages"
+              )
             );
 
 
           await set(
             messageRef,
             {
+
               name,
+
               text: "",
-              image: base64,
+
+              image:
+                base64,
+
               imageExpiresAt:
                 expiresAt,
+
               time:
                 getCurrentTime(),
+
               timestamp:
                 serverTimestamp(),
+
               userId
+
             }
           );
 
@@ -1256,12 +1815,16 @@
 
         } catch (error) {
 
-          console.error(error);
+          console.error(
+            error
+          );
+
 
           alert(
             error.message ||
             "画像の送信に失敗しました"
           );
+
 
           statusElement.textContent =
             "画像送信に失敗しました";
@@ -1284,134 +1847,9 @@
 
 
     /*
-      ==========================================
-      Online Presence
-      ==========================================
-    */
-
-    let presenceRef;
-
-
-    function updatePresenceName(
-      name
-    ) {
-
-      if (!presenceRef) {
-
-        return;
-
-      }
-
-      set(
-        presenceRef,
-        {
-          name,
-          online: true,
-          lastChanged:
-            serverTimestamp()
-        }
-      );
-
-    }
-
-
-    async function setupPresence() {
-
-      const connectedRef =
-        ref(
-          db,
-          ".info/connected"
-        );
-
-
-      presenceRef =
-        ref(
-          db,
-          "presence/" + userId
-        );
-
-
-      onValue(
-        connectedRef,
-        async (snapshot) => {
-
-          if (
-            snapshot.val() !== true
-          ) {
-
-            return;
-
-          }
-
-
-          const name =
-            nameInput.value.trim() ||
-            "名無し";
-
-
-          await onDisconnect(
-            presenceRef
-          ).set({
-            name,
-            online: false,
-            lastChanged:
-              serverTimestamp()
-          });
-
-
-          await set(
-            presenceRef,
-            {
-              name,
-              online: true,
-              lastChanged:
-                serverTimestamp()
-            }
-          );
-
-        }
-      );
-
-
-      onValue(
-        ref(db, "presence"),
-        (snapshot) => {
-
-          const data =
-            snapshot.val() || {};
-
-
-          const onlineNames =
-            Object.values(data)
-              .filter(
-                user =>
-                  user.online === true
-              )
-              .map(
-                user =>
-                  user.name || "名無し"
-              );
-
-
-          onlineUsersElement.textContent =
-            `オンライン: ${onlineNames.length}人` +
-            (
-              onlineNames.length
-                ? " — " +
-                  onlineNames.join("、")
-                : ""
-            );
-
-        }
-      );
-
-    }
-
-
-    /*
-      ==========================================
-      Chat Start
-      ==========================================
+    ==========================================
+    Chat Start
+    ==========================================
     */
 
     function startChat() {
@@ -1419,26 +1857,59 @@
       setupPresence();
 
 
+      /*
+        Presence
+      */
+
       onValue(
-        ref(db, "messages"),
-        (snapshot) => {
+        ref(
+          db,
+          "presence"
+        ),
+        snapshot => {
+
+          lastPresenceData =
+            snapshot.val() || {};
+
+
+          /*
+            オンライン状態が変わったら
+            メッセージ横の🟢⚫も更新
+          */
+
+          if (
+            lastMessageData
+          ) {
+
+            renderMessages(
+              lastMessageData
+            );
+
+          }
+
+        }
+      );
+
+
+      /*
+        Messages
+      */
+
+      onValue(
+        ref(
+          db,
+          "messages"
+        ),
+        snapshot => {
 
           const data =
             snapshot.val() || {};
 
 
-          /*
-            期限切れ画像を削除
-          */
-
           cleanupExpiredImages(
             data
           );
 
-
-          /*
-            メッセージ表示
-          */
 
           renderMessages(
             data
