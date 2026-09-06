@@ -74,7 +74,6 @@
 
   <script type="module">
 
-    // Firebase SDK
     import { initializeApp }
       from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
 
@@ -102,14 +101,17 @@
     // Firebaseを起動
     const app = initializeApp(firebaseConfig);
 
-    // Realtime Database
-    const db = getDatabase(app);
 
-    // messagesという場所を使用
+    // ★ Realtime Databaseに接続
+    const db = getDatabase(
+      app,
+      "https://chat-973d6-default-rtdb.asia-southeast1.firebasedatabase.app/"
+    );
+
+
     const messagesRef = ref(db, "messages");
 
 
-    // HTML要素
     const input = document.getElementById("messageInput");
     const button = document.getElementById("sendButton");
     const messages = document.getElementById("messages");
@@ -120,9 +122,7 @@
 
       const text = input.value.trim();
 
-      if (text === "") {
-        return;
-      }
+      if (text === "") return;
 
       push(messagesRef, {
         text: text,
@@ -134,11 +134,9 @@
     }
 
 
-    // 送信ボタン
     button.addEventListener("click", sendMessage);
 
 
-    // Enterキーでも送信
     input.addEventListener("keydown", (event) => {
 
       if (event.key === "Enter") {
@@ -148,7 +146,7 @@
     });
 
 
-    // Firebaseからリアルタイムでメッセージを受信
+    // リアルタイム受信
     onChildAdded(messagesRef, (snapshot) => {
 
       const data = snapshot.val();
@@ -157,12 +155,10 @@
 
       message.className = "message";
 
-      // textContentなのでHTMLを入力されても安全
       message.textContent = data.text;
 
       messages.appendChild(message);
 
-      // 最新メッセージまでスクロール
       messages.scrollTop = messages.scrollHeight;
 
     });
