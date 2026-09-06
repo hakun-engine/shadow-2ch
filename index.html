@@ -226,6 +226,11 @@
       font-size: 12px;
     }
 
+    .adminDeleteButton {
+      margin-left: 12px;
+      color: #8b0000;
+    }
+
     #nameArea {
       display: flex;
       gap: 8px;
@@ -421,6 +426,54 @@
       margin-top: 8px;
       display: none;
     }
+
+    #adminPanel {
+      display: none;
+      background: #fff4f4;
+      border: 1px solid #e5baba;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+    }
+
+    #adminPanel h3 {
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .adminRoomItem {
+      border: 1px solid #ddd;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 8px;
+    }
+
+    .adminRoomName {
+      font-weight: bold;
+    }
+
+    .adminRoomMeta {
+      color: #777;
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .adminRoomDeleteButton {
+      margin-top: 7px;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 10px;
+      background: #d33;
+      color: white;
+      cursor: pointer;
+    }
+
+    #adminStatus {
+      font-size: 13px;
+      margin-top: 8px;
+      color: #666;
+    }
   </style>
 
 </head>
@@ -475,6 +528,26 @@
 
   <div id="accountAreaRoom">
     Googleログイン中...
+  </div>
+
+  <div id="adminPanel">
+
+    <h3>👑 管理者パネル</h3>
+
+    <div>
+      管理者アカウントとしてログインしています。
+    </div>
+
+    <div class="sectionTitle">
+      🏠 全ルーム管理
+    </div>
+
+    <div id="adminRoomList">
+      ルームを読み込み中...
+    </div>
+
+    <div id="adminStatus"></div>
+
   </div>
 
   <div class="sectionTitle">
@@ -537,7 +610,7 @@
   </button>
 
   <div id="version">
-    Hakun Chat v1.8.1
+    Hakun Chat v1.9.0
   </div>
 
 </div>
@@ -597,7 +670,6 @@
 
 </header>
 
-
 <div id="roomInfo">
 
   <div id="roomTitle">
@@ -611,7 +683,6 @@
   </button>
 
 </div>
-
 
 <div id="nameArea">
 
@@ -628,9 +699,7 @@
 
 </div>
 
-
 <div id="messages"></div>
-
 
 <div id="sendArea">
 
@@ -649,18 +718,16 @@
 
 </div>
 
-
 <input
   id="imageInput"
   type="file"
   accept="image/*"
 >
 
-
 <div id="status"></div>
 
 <div id="version">
-  Hakun Chat v1.8.1
+  Hakun Chat v1.9.0
 </div>
 ```
 
@@ -724,6 +791,9 @@
 
     const PASSWORD =
       "fackfack";
+
+    const ADMIN_UID =
+      "RDxOQEaLgJg1m7QFqZ6uEhxNqEG3";
 
     const IMAGE_EXPIRE_TIME =
       60 * 60 * 1000;
@@ -846,6 +916,15 @@
     const roomPasswordError =
       document.getElementById("roomPasswordError");
 
+    const adminPanel =
+      document.getElementById("adminPanel");
+
+    const adminRoomList =
+      document.getElementById("adminRoomList");
+
+    const adminStatus =
+      document.getElementById("adminStatus");
+
 
     let currentUser = null;
     let userId = null;
@@ -876,6 +955,50 @@
     let lastPresenceData = {};
 
     let lastMessageData = null;
+
+
+    function isAdmin() {
+
+      return (
+        userId === ADMIN_UID
+      );
+
+    }
+
+
+    function updateAdminUI() {
+
+      if (isAdmin()) {
+
+        adminPanel.style.display =
+          "block";
+
+        accountArea.textContent =
+          "Google: " +
+          (
+            currentUser.email ||
+            "アカウント"
+          ) +
+          " 👑 管理者";
+
+        accountAreaRoom.textContent =
+          "Google: " +
+          (
+            currentUser.email ||
+            "アカウント"
+          ) +
+          " 👑 管理者";
+
+        loadAdminRooms();
+
+      } else {
+
+        adminPanel.style.display =
+          "none";
+
+      }
+
+    }
 
 
     function getPresenceRef() {
@@ -1068,7 +1191,9 @@
         document.createElement("div");
 
       title.textContent =
-        `オンライン: ${userList.length}人`;
+        "オンライン: " +
+        userList.length +
+        "人";
 
       onlineUsersElement.appendChild(
         title
@@ -1278,6 +1403,9 @@
             currentUser.uid;
 
 
+          updateAdminUI();
+
+
           accountArea.textContent =
             "Google: " +
             (
@@ -1359,6 +1487,9 @@
             );
 
 
+          updateAdminUI();
+
+
           loginScreen.style.display =
             "none";
 
@@ -1389,6 +1520,9 @@
           userId =
             null;
 
+          adminPanel.style.display =
+            "none";
+
           loginScreen.style.display =
             "flex";
 
@@ -1414,6 +1548,8 @@
 
       appScreen.style.display =
         "none";
+
+      updateAdminUI();
 
       loadRooms();
 
@@ -1441,6 +1577,13 @@
 
             roomList.textContent =
               "まだ部屋がありません。";
+
+            if (isAdmin()) {
+
+              adminRoomList.textContent =
+                "まだ部屋がありません。";
+
+            }
 
             return;
 
@@ -1575,7 +1718,8 @@
 
 
             if (
-              room.ownerId === userId
+              room.ownerId === userId ||
+              isAdmin()
             ) {
 
               const deleteButton =
@@ -1587,16 +1731,26 @@
                 "roomDeleteButton";
 
               deleteButton.textContent =
-                "削除";
+                isAdmin() &&
+                room.ownerId !== userId
+                  ? "管理者削除"
+                  : "削除";
 
 
               deleteButton.addEventListener(
                 "click",
                 async () => {
 
+                  const message =
+                    isAdmin() &&
+                    room.ownerId !== userId
+                      ? "管理者権限でこの部屋を削除しますか？\n部屋内のメッセージもすべて削除されます。"
+                      : "この部屋を削除しますか？\n部屋内のメッセージもすべて削除されます。";
+
+
                   if (
                     !confirm(
-                      "この部屋を削除しますか？\n部屋内のメッセージもすべて削除されます。"
+                      message
                     )
                   ) {
 
@@ -1614,6 +1768,15 @@
                         roomId
                       )
                     );
+
+                    if (
+                      currentRoomId ===
+                      roomId
+                    ) {
+
+                      await leaveRoom();
+
+                    }
 
                   } catch (error) {
 
@@ -1644,6 +1807,15 @@
 
           }
 
+
+          if (isAdmin()) {
+
+            renderAdminRoomList(
+              entries
+            );
+
+          }
+
         },
         error => {
 
@@ -1655,8 +1827,237 @@
           roomList.textContent =
             "部屋一覧を取得できません";
 
+          if (isAdmin()) {
+
+            adminRoomList.textContent =
+              "管理者用ルーム一覧を取得できません";
+
+          }
+
         }
       );
+
+    }
+
+
+    function loadAdminRooms() {
+
+      if (!isAdmin()) {
+        return;
+      }
+
+      onValue(
+        ref(db, "rooms"),
+        snapshot => {
+
+          const rooms =
+            snapshot.val() || {};
+
+          const entries =
+            Object.entries(rooms);
+
+
+          entries.sort(
+            (a, b) => {
+
+              const timeA =
+                a[1].createdAt || 0;
+
+              const timeB =
+                b[1].createdAt || 0;
+
+              return timeB - timeA;
+
+            }
+          );
+
+
+          renderAdminRoomList(
+            entries
+          );
+
+        },
+        error => {
+
+          console.error(
+            "管理者ルーム取得エラー:",
+            error
+          );
+
+          adminRoomList.textContent =
+            "ルームを取得できません";
+
+        }
+      );
+
+    }
+
+
+    function renderAdminRoomList(
+      entries
+    ) {
+
+      if (!isAdmin()) {
+        return;
+      }
+
+
+      adminRoomList.innerHTML =
+        "";
+
+
+      if (entries.length === 0) {
+
+        adminRoomList.textContent =
+          "まだ部屋がありません。";
+
+        return;
+
+      }
+
+
+      for (
+        const [roomId, room]
+        of entries
+      ) {
+
+        if (!room || !room.name) {
+          continue;
+        }
+
+
+        const item =
+          document.createElement(
+            "div"
+          );
+
+        item.className =
+          "adminRoomItem";
+
+
+        const name =
+          document.createElement(
+            "div"
+          );
+
+        name.className =
+          "adminRoomName";
+
+        name.textContent =
+          (
+            room.passwordHash
+              ? "🔐 "
+              : "🔓 "
+          ) +
+          room.name;
+
+        item.appendChild(
+          name
+        );
+
+
+        const meta =
+          document.createElement(
+            "div"
+          );
+
+        meta.className =
+          "adminRoomMeta";
+
+        meta.textContent =
+          "所有者UID: " +
+          (
+            room.ownerId ||
+            "不明"
+          );
+
+        item.appendChild(
+          meta
+        );
+
+
+        const deleteButton =
+          document.createElement(
+            "button"
+          );
+
+        deleteButton.className =
+          "adminRoomDeleteButton";
+
+        deleteButton.textContent =
+          "🗑️ この部屋を削除";
+
+
+        deleteButton.addEventListener(
+          "click",
+          async () => {
+
+            if (!isAdmin()) {
+
+              alert(
+                "管理者権限がありません"
+              );
+
+              return;
+
+            }
+
+
+            if (
+              !confirm(
+                "管理者権限で「" +
+                room.name +
+                "」を削除しますか？\n部屋内のメッセージ・オンライン情報もすべて削除されます。"
+              )
+            ) {
+
+              return;
+
+            }
+
+
+            try {
+
+              await remove(
+                ref(
+                  db,
+                  "rooms/" +
+                  roomId
+                )
+              );
+
+
+              adminStatus.textContent =
+                "「" +
+                room.name +
+                "」を削除しました";
+
+            } catch (error) {
+
+              console.error(
+                "管理者ルーム削除エラー:",
+                error
+              );
+
+              adminStatus.textContent =
+                "ルーム削除に失敗しました";
+
+            }
+
+          }
+        );
+
+
+        item.appendChild(
+          deleteButton
+        );
+
+
+        adminRoomList.appendChild(
+          item
+        );
+
+      }
 
     }
 
@@ -2037,6 +2438,13 @@
 
         roomOwner.textContent =
           "👑 あなたが作成した部屋";
+
+      } else if (
+        isAdmin()
+      ) {
+
+        roomOwner.textContent =
+          "👑 管理者モード";
 
       } else {
 
@@ -2712,7 +3120,8 @@
 
 
         if (
-          message.userId === userId
+          message.userId === userId ||
+          isAdmin()
         ) {
 
           const deleteButton =
@@ -2724,7 +3133,21 @@
             "deleteButton";
 
           deleteButton.textContent =
-            "削除";
+            message.userId === userId
+              ? "削除"
+              : "👑 管理者削除";
+
+
+          if (
+            isAdmin() &&
+            message.userId !== userId
+          ) {
+
+            deleteButton.classList.add(
+              "adminDeleteButton"
+            );
+
+          }
 
 
           deleteButton.addEventListener(
@@ -2733,7 +3156,9 @@
 
               if (
                 !confirm(
-                  "このメッセージを削除しますか？"
+                  message.userId === userId
+                    ? "このメッセージを削除しますか？"
+                    : "管理者権限でこのメッセージを削除しますか？"
                 )
               ) {
 
