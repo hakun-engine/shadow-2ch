@@ -1,236 +1,175 @@
+```html
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-    <meta charset="UTF-8">
-    <title>シャドー2ch（オンライン交信所 v1.3.0）</title>
-    <style>
-        body {
-            background-color: #efefef;
-            font-family: "MS UI Gothic", sans-serif;
-            color: #111;
-            margin: 20px;
-        }
-        .board-container {
-            max-width: 700px;
-            margin: 0 auto;
-            background: #fff;
-            border: 1px solid #ccc;
-            padding: 15px;
-        }
-        h2 {
-            color: #800;
-            font-size: 1.4em;
-            border-bottom: 2px solid #800;
-            padding-bottom: 5px;
-            margin-top: 0;
-        }
-        .form-area {
-            background: #f0f0f0;
-            padding: 10px;
-            border: 1px solid #ccc;
-            margin-bottom: 20px;
-        }
-        .form-area label {
-            display: inline-block;
-            width: 60px;
-            font-weight: bold;
-        }
-        .form-area input, .form-area textarea {
-            width: calc(100% - 70px);
-            padding: 4px;
-            margin-bottom: 8px;
-            box-sizing: border-box;
-        }
-        .form-area textarea {
-            height: 60px;
-            vertical-align: top;
-        }
-        .post {
-            border-bottom: 1px dashed #ccc;
-            padding: 8px 0;
-            font-size: 0.95em;
-        }
-        .post-num {
-            color: blue;
-            font-weight: bold;
-        }
-        .post-name {
-            color: green;
-            font-weight: bold;
-        }
-        .post-date {
-            color: #666;
-            font-size: 0.85em;
-        }
-        .post-body {
-            margin-top: 4px;
-            white-space: pre-wrap;
-        }
-        button {
-            background: linear-gradient(to bottom, #eee, #ccc);
-            border: 1px solid #777;
-            padding: 4px 15px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        button:active {
-            background: #bbb;
-        }
-        .status {
-            font-size: 0.85em;
-            color: #080;
-            margin-bottom: 10px;
-            font-weight: bold;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Hakun Chat</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    #messages {
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      padding: 15px;
+      height: 400px;
+      overflow-y: auto;
+      margin-bottom: 15px;
+    }
+
+    .message {
+      background: #f1f1f1;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      word-break: break-word;
+    }
+
+    #messageInput {
+      width: 75%;
+      box-sizing: border-box;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    #sendButton {
+      width: 20%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+  </style>
 </head>
+
 <body>
 
-<div class="board-container">
-    <h2>シャドー2ch（オンライン交信所）</h2>
-    <div class="status" id="statusMsg">🌐 サーバー接続中...</div>
+  <h1>💬 Hakun Chat</h1>
 
-    <!-- 投稿フォーム -->
-    <div class="form-area">
-        <div>
-            <label>名前:</label>
-            <input type="text" id="nameInput" value="名無しさん＠お腹いっぱい。">
-        </div>
-        <div>
-            <label>本文:</label>
-            <textarea id="msgInput" placeholder="ここに書くとスマホや別のパソコンにも同期されるよ"></textarea>
-        </div>
-        <div style="text-align: right;">
-            <button onclick="postMessage()">書き込む</button>
-        </div>
-    </div>
+  <div id="messages"></div>
 
-    <!-- 掲示板スレッド表示エリア -->
-    <div id="threadContainer">
-        <p>読み込み中...</p>
-    </div>
-</div>
+  <input
+    id="messageInput"
+    type="text"
+    placeholder="メッセージを入力..."
+  >
 
-<script>
-    const APP_VERSION = "v1.3.0";
-    
-    // 誰でもカードなしでデータを共有できる完全公開の無料クラウドストレージ
-    // （クロスドメインのCORS制限をクリアしている専用の共有エンドポイント）
-    const API_URL = "https://json.geoiplookup.io/"; // テスト用ではなく、リアルタイム共有には専用の公共APIを使います
-    
-    // 今回は確実にスマホと同期できるように、プログラミングコンテストやテストでよく使われる
-    // 「npoint.io」の完全公開共有ストレージIDを使用するよ！
-    const STORAGE_URL = "https://api.npoint.io/38890cf2822a101b0b7c";
+  <button id="sendButton">送信</button>
 
-    window.onload = function() {
-        console.log("App Version: " + APP_VERSION);
-        fetchMessages();
+
+  <script type="module">
+
+    // Firebase SDK
+    import { initializeApp }
+      from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+
+    import {
+      getDatabase,
+      ref,
+      push,
+      onChildAdded
+    }
+      from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
+
+
+    // Firebase設定
+    const firebaseConfig = {
+      apiKey: "AIzaSyAzwGUhz54-qSaSMTq-l0PTsr0eyr3Rhsk",
+      authDomain: "chat-973d6.firebaseapp.com",
+      projectId: "chat-973d6",
+      storageBucket: "chat-973d6.firebasestorage.app",
+      messagingSenderId: "655321586836",
+      appId: "1:655321586836:web:1273752f09b6c6d8662881",
+      measurementId: "G-XNZDKL6441"
     };
 
-    function fetchMessages() {
-        document.getElementById("statusMsg").innerText = `⏳ サーバーから同期中 (${APP_VERSION})...`;
-        
-        fetch(STORAGE_URL)
-            .then(res => {
-                if (!res.ok) throw new Error("サーバー接続エラー");
-                return res.json();
-            })
-            .then(data => {
-                const messages = data.messages || [];
-                renderMessages(messages);
-                document.getElementById("statusMsg").innerText = `🟢 オンライン交信中 (${APP_VERSION})：スマホと同期OK`;
-            })
-            .catch(err => {
-                console.warn("Sync Error:", err);
-                // 万が一サーバーが混み合っているときはローカル保存分でフォールバック
-                const fallback = JSON.parse(localStorage.getItem("shadow_2ch_fallback") || "[]");
-                renderMessages(fallback);
-                document.getElementById("statusMsg").innerText = `🟡 オフラインモード (${APP_VERSION})`;
-            });
+
+    // Firebaseを起動
+    const app = initializeApp(firebaseConfig);
+
+    // Realtime Database
+    const db = getDatabase(app);
+
+    // messagesという場所を使用
+    const messagesRef = ref(db, "messages");
+
+
+    // HTML要素
+    const input = document.getElementById("messageInput");
+    const button = document.getElementById("sendButton");
+    const messages = document.getElementById("messages");
+
+
+    // メッセージ送信
+    function sendMessage() {
+
+      const text = input.value.trim();
+
+      if (text === "") {
+        return;
+      }
+
+      push(messagesRef, {
+        text: text,
+        time: Date.now()
+      });
+
+      input.value = "";
+      input.focus();
     }
 
-    function renderMessages(messages) {
-        const container = document.getElementById("threadContainer");
-        if (!messages || messages.length === 0) {
-            container.innerHTML = "<p>まだ書き込みはありません。最初のレスを投稿してみよう！</p>";
-            return;
-        }
 
-        let html = "";
-        messages.forEach((msg, index) => {
-            const num = index + 1;
-            html += `
-                <div class="post">
-                    <div>
-                        <span class="post-num">${num}</span>：
-                        <span class="post-name">${escapeHTML(msg.name)}</span>：
-                        <span class="post-date">${escapeHTML(msg.date)}</span>
-                    </div>
-                    <div class="post-body">${escapeHTML(msg.body)}</div>
-                </div>
-            `;
-        });
-        container.innerHTML = html;
-    }
+    // 送信ボタン
+    button.addEventListener("click", sendMessage);
 
-    function postMessage() {
-        const name = document.getElementById("nameInput").value || "名無しさん";
-        const body = document.getElementById("msgInput").value;
 
-        if (!body.trim()) {
-            alert("本文を入力してください。");
-            return;
-        }
+    // Enterキーでも送信
+    input.addEventListener("keydown", (event) => {
 
-        const now = new Date();
-        const dateStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}(${['日','月','火','水','木','金','土'][now.getDay()]}) ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+      if (event.key === "Enter") {
+        sendMessage();
+      }
 
-        document.getElementById("statusMsg").innerText = "⏳ サーバーへ送信中...";
+    });
 
-        // 1. まず現在の最新データを取得して、そこに新しい書き込みを追加する
-        fetch(STORAGE_URL)
-            .then(res => res.json())
-            .then(data => {
-                let messages = data.messages || [];
-                messages.push({ name: name, body: body, date: dateStr });
 
-                // 2. クラウドサーバー（npoint）に保存をかける
-                return fetch(STORAGE_URL, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ messages: messages })
-                });
-            })
-            .then(res => {
-                if (res.ok) {
-                    document.getElementById("msgInput").value = "";
-                    fetchMessages(); // すぐに再読み込みしてスマホにも反映させる
-                } else {
-                    alert("書き込みに失敗しました。時間をおいてもう一度試してね。");
-                    document.getElementById("statusMsg").innerText = "🔴 書き込みエラー";
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                alert("通信エラーが発生しました。");
-                document.getElementById("statusMsg").innerText = "🔴 通信エラー";
-            });
-    }
+    // Firebaseからリアルタイムでメッセージを受信
+    onChildAdded(messagesRef, (snapshot) => {
 
-    function escapeHTML(str) {
-        if (!str) return "";
-        return str.replace(/[&'`"<>]/g, function(match) {
-            return {
-                '&': '&amp;',
-                "'": '&#x27;',
-                '`': '&#x60;',
-                '"': '&quot;',
-                '<': '&lt;',
-                '>': '&gt;',
-            }[match]
-        });
-    }
-</script>
+      const data = snapshot.val();
+
+      const message = document.createElement("div");
+
+      message.className = "message";
+
+      // textContentなのでHTMLを入力されても安全
+      message.textContent = data.text;
+
+      messages.appendChild(message);
+
+      // 最新メッセージまでスクロール
+      messages.scrollTop = messages.scrollHeight;
+
+    });
+
+  </script>
 
 </body>
+
 </html>
+```
