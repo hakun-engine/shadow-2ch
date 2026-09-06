@@ -4,75 +4,108 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Hakun Chat</title>
 
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
       margin: 0;
       padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
     }
+
+    /* ===== ログイン画面 ===== */
 
     #login {
       max-width: 400px;
       margin: 100px auto;
-      background: white;
       padding: 30px;
-      border-radius: 15px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.12);
       text-align: center;
     }
 
-    #login input {
-      width: 90%;
-      padding: 12px;
-      margin: 10px 0;
+    #login h1 {
+      margin-bottom: 10px;
+    }
+
+    #passwordInput {
+      width: 100%;
+      padding: 13px;
+      margin: 15px 0 10px;
       border: 1px solid #ccc;
-      border-radius: 8px;
+      border-radius: 9px;
       font-size: 16px;
     }
 
-    button {
-      padding: 10px 15px;
+    #loginButton {
+      width: 100%;
+      padding: 13px;
       border: none;
-      border-radius: 8px;
+      border-radius: 9px;
+      background: #222;
+      color: white;
+      font-size: 16px;
       cursor: pointer;
-      font-size: 15px;
     }
 
-    #login button {
-      width: 96%;
-      background: #333;
-      color: white;
+    #loginButton:hover {
+      opacity: 0.85;
     }
 
     #error {
-      color: red;
-      margin-top: 10px;
       display: none;
+      margin-top: 12px;
+      color: #e53935;
     }
+
+
+    /* ===== チャット ===== */
 
     #chat {
       display: none;
-      max-width: 700px;
+      max-width: 750px;
       margin: auto;
     }
 
+    #chat h1 {
+      margin-bottom: 10px;
+    }
+
+    #nameInput {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 9px;
+      font-size: 16px;
+    }
+
     #chatBox {
-      background: white;
-      min-height: 400px;
-      padding: 15px;
-      border-radius: 15px;
+      height: 500px;
       margin-top: 15px;
+      padding: 15px;
+      background: white;
+      border-radius: 15px;
       overflow-y: auto;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.08);
     }
 
     .message {
-      padding: 10px;
-      margin-bottom: 10px;
-      background: #eee;
-      border-radius: 10px;
+      margin-bottom: 12px;
+      padding: 11px;
+      background: #eeeeee;
+      border-radius: 11px;
+      word-break: break-word;
+    }
+
+    .messageHeader {
+      margin-bottom: 5px;
     }
 
     .name {
@@ -80,18 +113,28 @@
     }
 
     .time {
-      font-size: 12px;
-      color: #777;
       margin-left: 8px;
+      color: #777;
+      font-size: 12px;
     }
 
-    .delete {
+    .deleteButton {
       float: right;
-      background: #d33;
+      padding: 4px 8px;
+      border: none;
+      border-radius: 6px;
+      background: #e53935;
       color: white;
-      padding: 5px 8px;
       font-size: 12px;
+      cursor: pointer;
     }
+
+    .deleteButton:hover {
+      opacity: 0.8;
+    }
+
+
+    /* ===== 送信欄 ===== */
 
     #sendArea {
       display: flex;
@@ -101,31 +144,63 @@
 
     #messageInput {
       flex: 1;
-      padding: 12px;
+      min-width: 0;
+      padding: 13px;
       border: 1px solid #ccc;
-      border-radius: 8px;
+      border-radius: 9px;
       font-size: 16px;
     }
 
     #sendButton {
-      background: #333;
+      padding: 13px 20px;
+      border: none;
+      border-radius: 9px;
+      background: #222;
       color: white;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    #sendButton:hover {
+      opacity: 0.85;
     }
 
     #version {
+      margin-top: 15px;
       text-align: center;
       color: #888;
       font-size: 12px;
-      margin-top: 15px;
+    }
+
+    @media (max-width: 600px) {
+
+      body {
+        padding: 10px;
+      }
+
+      #chatBox {
+        height: 60vh;
+      }
+
+      #sendButton {
+        padding: 13px 15px;
+      }
+
     }
   </style>
 </head>
 
+
 <body>
 
+  <!-- ========================= -->
   <!-- 合言葉画面 -->
+  <!-- ========================= -->
+
   <div id="login">
+
     <h1>🔐 Hakun Chat</h1>
+
     <p>合言葉を入力してください</p>
 
     <input
@@ -135,13 +210,22 @@
       autocomplete="off"
     >
 
-    <button onclick="checkPassword()">入室</button>
+    <button id="loginButton">
+      入室
+    </button>
 
-    <div id="error">合言葉が違います</div>
+    <div id="error">
+      合言葉が違います
+    </div>
+
   </div>
 
 
+
+  <!-- ========================= -->
   <!-- チャット画面 -->
+  <!-- ========================= -->
+
   <div id="chat">
 
     <h1>💬 Hakun Chat</h1>
@@ -153,9 +237,12 @@
       maxlength="20"
     >
 
+
     <div id="chatBox"></div>
 
+
     <div id="sendArea">
+
       <input
         type="text"
         id="messageInput"
@@ -163,18 +250,31 @@
         maxlength="500"
       >
 
-      <button id="sendButton">送信</button>
+      <button id="sendButton">
+        送信
+      </button>
+
     </div>
 
-    <div id="version">Version 1.3.0</div>
+
+    <div id="version">
+      Version 1.3.1
+    </div>
 
   </div>
 
 
+
+  <!-- ========================= -->
+  <!-- Firebase -->
+  <!-- ========================= -->
+
   <script type="module">
 
-    import { initializeApp }
-      from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import {
+      initializeApp
+    } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
 
     import {
       getDatabase,
@@ -182,128 +282,252 @@
       push,
       onValue,
       remove
-    }
-      from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+    } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
+
+
+    /* ===== Firebase設定 ===== */
 
     const firebaseConfig = {
+
       apiKey: "AIzaSyAzwGUhz54-qSaSMTq-l0PTsr0eyr3Rhsk",
-      authDomain: "chat-973d6.firebaseapp.com",
-      projectId: "chat-973d6",
-      storageBucket: "chat-973d6.firebasestorage.app",
-      messagingSenderId: "655321586836",
-      appId: "1:655321586836:web:1273752f09b6c6d8662881",
-      measurementId: "G-XNZDKL6441"
+
+      authDomain:
+        "chat-973d6.firebaseapp.com",
+
+      projectId:
+        "chat-973d6",
+
+      storageBucket:
+        "chat-973d6.firebasestorage.app",
+
+      messagingSenderId:
+        "655321586836",
+
+      appId:
+        "1:655321586836:web:1273752f09b6c6d8662881",
+
+      measurementId:
+        "G-XNZDKL6441"
+
     };
 
 
-    const app = initializeApp(firebaseConfig);
 
-    const db = getDatabase(
-      app,
-      "https://chat-973d6.asia-southeast1.firebasedatabase.app/"
-    );
+    /* ===== Firebase開始 ===== */
 
-
-    const messagesRef = ref(db, "messages");
+    const app =
+      initializeApp(firebaseConfig);
 
 
-    // ブラウザごとのユーザーID
-    let userId = localStorage.getItem("hakunChatUserId");
+
+    /*
+      ★重要
+      正しいRealtime Database URL
+    */
+
+    const db =
+      getDatabase(
+        app,
+        "https://chat-973d6-default-rtdb.asia-southeast1.firebasedatabase.app/"
+      );
+
+
+
+    const messagesRef =
+      ref(db, "messages");
+
+
+
+    /* ===== ユーザーID ===== */
+
+    let userId =
+      localStorage.getItem(
+        "hakunChatUserId"
+      );
+
 
     if (!userId) {
-      userId =
-        Math.random().toString(36).substring(2) +
-        Date.now().toString(36);
 
-      localStorage.setItem("hakunChatUserId", userId);
+      userId =
+        crypto.randomUUID();
+
+      localStorage.setItem(
+        "hakunChatUserId",
+        userId
+      );
+
     }
 
 
-    // 名前を保存
-    const nameInput = document.getElementById("nameInput");
+
+    /* ===== 名前 ===== */
+
+    const nameInput =
+      document.getElementById(
+        "nameInput"
+      );
+
 
     nameInput.value =
-      localStorage.getItem("hakunChatName") || "";
+      localStorage.getItem(
+        "hakunChatName"
+      ) || "";
 
 
-    nameInput.addEventListener("change", () => {
-      localStorage.setItem(
-        "hakunChatName",
-        nameInput.value
+    nameInput.addEventListener(
+      "input",
+      () => {
+
+        localStorage.setItem(
+          "hakunChatName",
+          nameInput.value
+        );
+
+      }
+    );
+
+
+
+    /* ========================= */
+    /* 合言葉 */
+    /* ========================= */
+
+    const CORRECT_PASSWORD =
+      "fackfack";
+
+
+    const login =
+      document.getElementById(
+        "login"
       );
-    });
 
 
-    // 合言葉チェック
-    window.checkPassword = function () {
+    const chat =
+      document.getElementById(
+        "chat"
+      );
 
-      const password =
-        document.getElementById("passwordInput").value;
 
-      if (password === "fackfack") {
+    const passwordInput =
+      document.getElementById(
+        "passwordInput"
+      );
+
+
+    const error =
+      document.getElementById(
+        "error"
+      );
+
+
+    function unlockChat() {
+
+      if (
+        passwordInput.value ===
+        CORRECT_PASSWORD
+      ) {
 
         sessionStorage.setItem(
           "hakunChatUnlocked",
           "true"
         );
 
-        document.getElementById("login").style.display = "none";
-        document.getElementById("chat").style.display = "block";
+        login.style.display =
+          "none";
+
+        chat.style.display =
+          "block";
+
+        passwordInput.value = "";
+
+        error.style.display =
+          "none";
 
       } else {
 
-        document.getElementById("error").style.display = "block";
+        error.style.display =
+          "block";
+
+        passwordInput.select();
 
       }
-    };
+
+    }
 
 
-    // Enterでも入室
-    document.getElementById("passwordInput")
-      .addEventListener("keydown", (event) => {
-
-        if (event.key === "Enter") {
-          checkPassword();
-        }
-
-      });
+    document
+      .getElementById("loginButton")
+      .addEventListener(
+        "click",
+        unlockChat
+      );
 
 
-    // メッセージ送信
-    document.getElementById("sendButton")
-      .addEventListener("click", sendMessage);
-
-
-    document.getElementById("messageInput")
-      .addEventListener("keydown", (event) => {
+    passwordInput.addEventListener(
+      "keydown",
+      (event) => {
 
         if (event.key === "Enter") {
-          sendMessage();
+
+          unlockChat();
+
         }
 
-      });
+      }
+    );
 
 
-    function sendMessage() {
+
+    /* ========================= */
+    /* 送信 */
+    /* ========================= */
+
+    const messageInput =
+      document.getElementById(
+        "messageInput"
+      );
+
+
+    const sendButton =
+      document.getElementById(
+        "sendButton"
+      );
+
+
+    async function sendMessage() {
 
       const name =
         nameInput.value.trim();
 
+
       const text =
-        document.getElementById("messageInput")
-          .value.trim();
+        messageInput.value.trim();
 
 
       if (!name) {
-        alert("名前を入力してください");
+
+        alert(
+          "名前を入力してください"
+        );
+
+        nameInput.focus();
+
         return;
+
       }
 
-      if (!text) return;
+
+      if (!text) {
+
+        return;
+
+      }
 
 
-      const now = new Date();
+      const now =
+        new Date();
+
 
       const time =
         now.toLocaleTimeString(
@@ -315,126 +539,280 @@
         );
 
 
-      push(messagesRef, {
+      try {
 
-        name: name,
-        text: text,
-        time: time,
-        userId: userId
+        await push(
+          messagesRef,
+          {
 
-      });
+            name: name,
+
+            text: text,
+
+            time: time,
+
+            userId: userId,
+
+            timestamp:
+              Date.now()
+
+          }
+        );
 
 
-      document.getElementById("messageInput")
-        .value = "";
+        messageInput.value = "";
+
+        messageInput.focus();
+
+
+      } catch (error) {
+
+        console.error(error);
+
+        alert(
+          "送信できませんでした。Firebaseの設定を確認してください。"
+        );
+
+      }
 
     }
 
 
-    // メッセージをリアルタイム表示
-    onValue(messagesRef, (snapshot) => {
 
-      const chatBox =
-        document.getElementById("chatBox");
-
-      chatBox.innerHTML = "";
+    sendButton.addEventListener(
+      "click",
+      sendMessage
+    );
 
 
-      snapshot.forEach((child) => {
+    messageInput.addEventListener(
+      "keydown",
+      (event) => {
 
-        const data = child.val();
+        if (
+          event.key === "Enter"
+        ) {
 
-        const message =
-          document.createElement("div");
-
-        message.className = "message";
-
-
-        const header =
-          document.createElement("div");
-
-        const name =
-          document.createElement("span");
-
-        name.className = "name";
-
-        name.textContent =
-          data.name;
-
-
-        const time =
-          document.createElement("span");
-
-        time.className = "time";
-
-        time.textContent =
-          data.time;
-
-
-        header.appendChild(name);
-        header.appendChild(time);
-
-
-        // 自分のメッセージなら削除ボタン
-        if (data.userId === userId) {
-
-          const deleteButton =
-            document.createElement("button");
-
-          deleteButton.className = "delete";
-
-          deleteButton.textContent = "削除";
-
-
-          deleteButton.onclick = () => {
-
-            remove(
-              ref(
-                db,
-                "messages/" + child.key
-              )
-            );
-
-          };
-
-
-          header.appendChild(deleteButton);
+          sendMessage();
 
         }
 
-
-        const text =
-          document.createElement("div");
-
-        text.textContent =
-          data.text;
+      }
+    );
 
 
-        message.appendChild(header);
-        message.appendChild(text);
+
+    /* ========================= */
+    /* メッセージ表示 */
+    /* ========================= */
+
+    const chatBox =
+      document.getElementById(
+        "chatBox"
+      );
 
 
-        chatBox.appendChild(message);
+    onValue(
+      messagesRef,
+      (snapshot) => {
 
-      });
-
-
-      chatBox.scrollTop =
-        chatBox.scrollHeight;
-
-    });
+        chatBox.innerHTML = "";
 
 
-    // ページを開いたとき、
-    // このタブですでに認証済みなら直接チャットへ
+        snapshot.forEach(
+          (child) => {
+
+            const data =
+              child.val();
+
+
+            const message =
+              document.createElement(
+                "div"
+              );
+
+
+            message.className =
+              "message";
+
+
+            /* ヘッダー */
+
+            const header =
+              document.createElement(
+                "div"
+              );
+
+
+            header.className =
+              "messageHeader";
+
+
+            /* 名前 */
+
+            const name =
+              document.createElement(
+                "span"
+              );
+
+
+            name.className =
+              "name";
+
+
+            name.textContent =
+              data.name || "名無し";
+
+
+            header.appendChild(
+              name
+            );
+
+
+            /* 時刻 */
+
+            const time =
+              document.createElement(
+                "span"
+              );
+
+
+            time.className =
+              "time";
+
+
+            time.textContent =
+              data.time || "";
+
+
+            header.appendChild(
+              time
+            );
+
+
+            /* 削除 */
+
+            if (
+              data.userId ===
+              userId
+            ) {
+
+              const deleteButton =
+                document.createElement(
+                  "button"
+                );
+
+
+              deleteButton.className =
+                "deleteButton";
+
+
+              deleteButton.textContent =
+                "削除";
+
+
+              deleteButton.addEventListener(
+                "click",
+                async () => {
+
+                  const ok =
+                    confirm(
+                      "このメッセージを削除しますか？"
+                    );
+
+
+                  if (!ok) return;
+
+
+                  try {
+
+                    await remove(
+                      ref(
+                        db,
+                        "messages/" +
+                        child.key
+                      )
+                    );
+
+                  } catch (error) {
+
+                    console.error(
+                      error
+                    );
+
+                    alert(
+                      "削除できませんでした"
+                    );
+
+                  }
+
+                }
+              );
+
+
+              header.appendChild(
+                deleteButton
+              );
+
+            }
+
+
+            /* 本文 */
+
+            const text =
+              document.createElement(
+                "div"
+              );
+
+
+            text.textContent =
+              data.text || "";
+
+
+            message.appendChild(
+              header
+            );
+
+
+            message.appendChild(
+              text
+            );
+
+
+            chatBox.appendChild(
+              message
+            );
+
+          }
+        );
+
+
+        /* 一番下へ */
+
+        chatBox.scrollTop =
+          chatBox.scrollHeight;
+
+      }
+    );
+
+
+
+    /* ========================= */
+    /* ページを更新しても */
+    /* このタブでは入室状態を維持 */
+    /* ========================= */
+
     if (
       sessionStorage.getItem(
         "hakunChatUnlocked"
       ) === "true"
     ) {
 
-      document.getElementById("login").style.display = "none";
-      document.getElementById("chat").style.display = "block";
+      login.style.display =
+        "none";
+
+      chat.style.display =
+        "block";
 
     }
 
