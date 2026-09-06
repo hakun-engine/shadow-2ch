@@ -4,7 +4,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>Hakun Chat</title>
 
   <style>
@@ -14,127 +13,161 @@
 
     body {
       margin: 0;
-      padding: 20px;
       font-family: Arial, sans-serif;
-      background: #f3f4f6;
+      background: #f2f2f2;
+      color: #222;
     }
 
-    /* ===== ログイン画面 ===== */
+    #lockScreen {
+      position: fixed;
+      inset: 0;
+      background: #f2f2f2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
 
-    #login {
-      max-width: 400px;
-      margin: 100px auto;
-      padding: 30px;
+    #lockBox {
       background: white;
-      border-radius: 18px;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+      width: min(90%, 360px);
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 5px 25px rgba(0,0,0,0.15);
       text-align: center;
     }
 
-    #login h1 {
-      margin-bottom: 10px;
-    }
-
-    #passwordInput {
+    #lockBox input {
       width: 100%;
-      padding: 13px;
-      margin: 15px 0 10px;
+      padding: 12px;
+      margin-top: 15px;
       border: 1px solid #ccc;
-      border-radius: 9px;
+      border-radius: 8px;
       font-size: 16px;
     }
 
-    #loginButton {
+    #lockBox button {
       width: 100%;
-      padding: 13px;
+      margin-top: 10px;
+      padding: 12px;
       border: none;
-      border-radius: 9px;
+      border-radius: 8px;
       background: #222;
       color: white;
       font-size: 16px;
       cursor: pointer;
     }
 
-    #loginButton:hover {
-      opacity: 0.85;
+    #lockError {
+      color: #d00;
+      margin-top: 10px;
+      display: none;
     }
 
-    #error {
+    #app {
       display: none;
-      margin-top: 12px;
-      color: #e53935;
-    }
-
-
-    /* ===== チャット ===== */
-
-    #chat {
-      display: none;
-      max-width: 750px;
+      max-width: 800px;
       margin: auto;
+      padding: 15px;
     }
 
-    #chat h1 {
+    header {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+    }
+
+    header h1 {
+      margin: 0 0 8px;
+    }
+
+    #online {
+      color: #168a35;
+      font-size: 14px;
+    }
+
+    #onlineUsers {
+      margin-top: 5px;
+      color: #555;
+      font-size: 13px;
+    }
+
+    #messages {
+      background: white;
+      border-radius: 12px;
+      padding: 10px;
+      min-height: 400px;
+    }
+
+    .message {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .message:last-child {
+      border-bottom: none;
+    }
+
+    .messageName {
+      font-weight: bold;
+      margin-bottom: 3px;
+    }
+
+    .messageTime {
+      color: #888;
+      font-size: 11px;
+      margin-left: 5px;
+      font-weight: normal;
+    }
+
+    .messageText {
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-top: 4px;
+    }
+
+    .messageImage {
+      display: block;
+      max-width: min(100%, 500px);
+      max-height: 500px;
+      margin-top: 8px;
+      border-radius: 10px;
+      object-fit: contain;
+      background: #eee;
+    }
+
+    .deleteButton {
+      margin-top: 6px;
+      border: none;
+      background: transparent;
+      color: #d33;
+      cursor: pointer;
+      padding: 2px 0;
+      font-size: 12px;
+    }
+
+    #nameArea {
+      display: flex;
+      gap: 8px;
       margin-bottom: 10px;
     }
 
     #nameInput {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 9px;
-      font-size: 16px;
-    }
-
-    #chatBox {
-      height: 500px;
-      margin-top: 15px;
-      padding: 15px;
-      background: white;
-      border-radius: 15px;
-      overflow-y: auto;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.08);
-    }
-
-    .message {
-      margin-bottom: 12px;
+      flex: 1;
       padding: 11px;
-      background: #eeeeee;
-      border-radius: 11px;
-      word-break: break-word;
+      border: 1px solid #ccc;
+      border-radius: 8px;
     }
 
-    .messageHeader {
-      margin-bottom: 5px;
-    }
-
-    .name {
-      font-weight: bold;
-    }
-
-    .time {
-      margin-left: 8px;
-      color: #777;
-      font-size: 12px;
-    }
-
-    .deleteButton {
-      float: right;
-      padding: 4px 8px;
+    #saveName {
+      padding: 11px 15px;
       border: none;
-      border-radius: 6px;
-      background: #e53935;
+      border-radius: 8px;
+      background: #333;
       color: white;
-      font-size: 12px;
       cursor: pointer;
     }
-
-    .deleteButton:hover {
-      opacity: 0.8;
-    }
-
-
-    /* ===== 送信欄 ===== */
 
     #sendArea {
       display: flex;
@@ -144,111 +177,112 @@
 
     #messageInput {
       flex: 1;
-      min-width: 0;
-      padding: 13px;
+      min-height: 45px;
+      max-height: 150px;
+      resize: vertical;
+      padding: 11px;
       border: 1px solid #ccc;
-      border-radius: 9px;
-      font-size: 16px;
+      border-radius: 8px;
+      font-size: 15px;
     }
 
-    #sendButton {
-      padding: 13px 20px;
+    #sendButton,
+    #imageButton {
       border: none;
-      border-radius: 9px;
-      background: #222;
-      color: white;
-      font-size: 15px;
+      border-radius: 8px;
+      padding: 10px 15px;
       cursor: pointer;
     }
 
-    #sendButton:hover {
-      opacity: 0.85;
+    #sendButton {
+      background: #222;
+      color: white;
+    }
+
+    #imageButton {
+      background: #ddd;
+    }
+
+    #imageInput {
+      display: none;
+    }
+
+    #status {
+      min-height: 20px;
+      margin-top: 6px;
+      color: #666;
+      font-size: 13px;
     }
 
     #version {
-      margin-top: 15px;
       text-align: center;
-      color: #888;
-      font-size: 12px;
-    }
-
-    @media (max-width: 600px) {
-
-      body {
-        padding: 10px;
-      }
-
-      #chatBox {
-        height: 60vh;
-      }
-
-      #sendButton {
-        padding: 13px 15px;
-      }
-
+      color: #999;
+      font-size: 11px;
+      margin-top: 15px;
     }
   </style>
 </head>
 
-
 <body>
 
-  <!-- ========================= -->
-  <!-- 合言葉画面 -->
-  <!-- ========================= -->
+  <div id="lockScreen">
+    <div id="lockBox">
+      <h2>Hakun Chat</h2>
+      <p>パスワードを入力してください</p>
 
-  <div id="login">
+      <input
+        id="passwordInput"
+        type="password"
+        placeholder="パスワード"
+      >
 
-    <h1>🔐 Hakun Chat</h1>
+      <button id="unlockButton">入室</button>
 
-    <p>合言葉を入力してください</p>
-
-    <input
-      type="password"
-      id="passwordInput"
-      placeholder="合言葉"
-      autocomplete="off"
-    >
-
-    <button id="loginButton">
-      入室
-    </button>
-
-    <div id="error">
-      合言葉が違います
+      <div id="lockError">
+        パスワードが違います
+      </div>
     </div>
-
   </div>
 
+  <div id="app">
 
+    <header>
+      <h1>Hakun Chat</h1>
 
-  <!-- ========================= -->
-  <!-- チャット画面 -->
-  <!-- ========================= -->
+      <div id="online">
+        ● オンライン
+      </div>
 
-  <div id="chat">
+      <div id="onlineUsers">
+        オンライン人数を取得中...
+      </div>
+    </header>
 
-    <h1>💬 Hakun Chat</h1>
+    <div id="nameArea">
+      <input
+        id="nameInput"
+        type="text"
+        maxlength="20"
+        placeholder="名前"
+      >
 
-    <input
-      type="text"
-      id="nameInput"
-      placeholder="名前を入力"
-      maxlength="20"
-    >
+      <button id="saveName">
+        名前保存
+      </button>
+    </div>
 
-
-    <div id="chatBox"></div>
-
+    <div id="messages"></div>
 
     <div id="sendArea">
 
-      <input
-        type="text"
+      <textarea
         id="messageInput"
         placeholder="メッセージを入力"
-        maxlength="500"
-      >
+      ></textarea>
+
+      <button id="imageButton">
+        📷
+      </button>
 
       <button id="sendButton">
         送信
@@ -256,96 +290,139 @@
 
     </div>
 
+    <input
+      id="imageInput"
+      type="file"
+      accept="image/*"
+    >
+
+    <div id="status"></div>
 
     <div id="version">
-      Version 1.3.1
+      Hakun Chat v1.5.0
     </div>
 
   </div>
 
-
-
-  <!-- ========================= -->
-  <!-- Firebase -->
-  <!-- ========================= -->
-
   <script type="module">
 
-    import {
-      initializeApp
-    } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    /*
+      ==========================================
+      Firebase
+      ==========================================
+    */
 
+    import { initializeApp } from
+      "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 
     import {
       getDatabase,
       ref,
       push,
+      set,
+      remove,
       onValue,
-      remove
-    } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+      onDisconnect,
+      serverTimestamp
+    } from
+      "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
-
-
-    /* ===== Firebase設定 ===== */
 
     const firebaseConfig = {
-
       apiKey: "AIzaSyAzwGUhz54-qSaSMTq-l0PTsr0eyr3Rhsk",
-
-      authDomain:
-        "chat-973d6.firebaseapp.com",
-
-      projectId:
-        "chat-973d6",
-
-      storageBucket:
-        "chat-973d6.firebasestorage.app",
-
-      messagingSenderId:
-        "655321586836",
-
-      appId:
-        "1:655321586836:web:1273752f09b6c6d8662881",
-
-      measurementId:
-        "G-XNZDKL6441"
-
+      authDomain: "chat-973d6.firebaseapp.com",
+      projectId: "chat-973d6",
+      storageBucket: "chat-973d6.firebasestorage.app",
+      messagingSenderId: "655321586836",
+      appId: "1:655321586836:web:1273752f09b6c6d8662881",
+      measurementId: "G-XNZDKL6441"
     };
 
 
+    const app = initializeApp(firebaseConfig);
 
-    /* ===== Firebase開始 ===== */
-
-    const app =
-      initializeApp(firebaseConfig);
-
+    const db = getDatabase(
+      app,
+      "https://chat-973d6-default-rtdb.asia-southeast1.firebasedatabase.app/"
+    );
 
 
     /*
-      ★重要
-      正しいRealtime Database URL
+      ==========================================
+      設定
+      ==========================================
     */
 
-    const db =
-      getDatabase(
-        app,
-        "https://chat-973d6-default-rtdb.asia-southeast1.firebasedatabase.app/"
-      );
+    const PASSWORD = "fackfack";
+
+    const IMAGE_EXPIRE_TIME = 60 * 60 * 1000;
+
+    // 元画像の最大サイズ
+    const MAX_ORIGINAL_SIZE = 5 * 1024 * 1024;
+
+    // Firebaseに保存するBase64化前の安全目標
+    const MAX_COMPRESSED_SIZE = 650 * 1024;
+
+    const MAX_IMAGE_SIDE = 1600;
 
 
+    /*
+      ==========================================
+      DOM
+      ==========================================
+    */
 
-    const messagesRef =
-      ref(db, "messages");
+    const lockScreen =
+      document.getElementById("lockScreen");
+
+    const appScreen =
+      document.getElementById("app");
+
+    const passwordInput =
+      document.getElementById("passwordInput");
+
+    const unlockButton =
+      document.getElementById("unlockButton");
+
+    const lockError =
+      document.getElementById("lockError");
+
+    const nameInput =
+      document.getElementById("nameInput");
+
+    const saveName =
+      document.getElementById("saveName");
+
+    const messageInput =
+      document.getElementById("messageInput");
+
+    const sendButton =
+      document.getElementById("sendButton");
+
+    const imageButton =
+      document.getElementById("imageButton");
+
+    const imageInput =
+      document.getElementById("imageInput");
+
+    const messagesElement =
+      document.getElementById("messages");
+
+    const statusElement =
+      document.getElementById("status");
+
+    const onlineUsersElement =
+      document.getElementById("onlineUsers");
 
 
-
-    /* ===== ユーザーID ===== */
+    /*
+      ==========================================
+      User ID
+      ==========================================
+    */
 
     let userId =
-      localStorage.getItem(
-        "hakunChatUserId"
-      );
-
+      localStorage.getItem("hakunChatUserId");
 
     if (!userId) {
 
@@ -360,72 +437,54 @@
     }
 
 
-
-    /* ===== 名前 ===== */
-
-    const nameInput =
-      document.getElementById(
-        "nameInput"
-      );
-
+    /*
+      ==========================================
+      Name
+      ==========================================
+    */
 
     nameInput.value =
-      localStorage.getItem(
-        "hakunChatName"
-      ) || "";
+      localStorage.getItem("hakunChatName") || "";
 
 
-    nameInput.addEventListener(
-      "input",
+    saveName.addEventListener(
+      "click",
       () => {
+
+        const name =
+          nameInput.value.trim();
+
+        if (!name) {
+
+          alert("名前を入力してください");
+
+          return;
+        }
 
         localStorage.setItem(
           "hakunChatName",
-          nameInput.value
+          name
         );
+
+        updatePresenceName(name);
+
+        statusElement.textContent =
+          "名前を保存しました";
 
       }
     );
 
 
+    /*
+      ==========================================
+      Password
+      ==========================================
+    */
 
-    /* ========================= */
-    /* 合言葉 */
-    /* ========================= */
-
-    const CORRECT_PASSWORD =
-      "fackfack";
-
-
-    const login =
-      document.getElementById(
-        "login"
-      );
-
-
-    const chat =
-      document.getElementById(
-        "chat"
-      );
-
-
-    const passwordInput =
-      document.getElementById(
-        "passwordInput"
-      );
-
-
-    const error =
-      document.getElementById(
-        "error"
-      );
-
-
-    function unlockChat() {
+    function unlock() {
 
       if (
-        passwordInput.value ===
-        CORRECT_PASSWORD
+        passwordInput.value === PASSWORD
       ) {
 
         sessionStorage.setItem(
@@ -433,35 +492,28 @@
           "true"
         );
 
-        login.style.display =
+        lockScreen.style.display =
           "none";
 
-        chat.style.display =
+        appScreen.style.display =
           "block";
 
-        passwordInput.value = "";
-
-        error.style.display =
-          "none";
+        startChat();
 
       } else {
 
-        error.style.display =
+        lockError.style.display =
           "block";
-
-        passwordInput.select();
 
       }
 
     }
 
 
-    document
-      .getElementById("loginButton")
-      .addEventListener(
-        "click",
-        unlockChat
-      );
+    unlockButton.addEventListener(
+      "click",
+      unlock
+    );
 
 
     passwordInput.addEventListener(
@@ -470,7 +522,7 @@
 
         if (event.key === "Enter") {
 
-          unlockChat();
+          unlock();
 
         }
 
@@ -478,40 +530,537 @@
     );
 
 
+    if (
+      sessionStorage.getItem(
+        "hakunChatUnlocked"
+      ) === "true"
+    ) {
 
-    /* ========================= */
-    /* 送信 */
-    /* ========================= */
+      lockScreen.style.display =
+        "none";
 
-    const messageInput =
-      document.getElementById(
-        "messageInput"
+      appScreen.style.display =
+        "block";
+
+      startChat();
+
+    }
+
+
+    /*
+      ==========================================
+      Utility
+      ==========================================
+    */
+
+    function getCurrentTime() {
+
+      const now =
+        new Date();
+
+      return now.toLocaleTimeString(
+        "ja-JP",
+        {
+          hour: "2-digit",
+          minute: "2-digit"
+        }
+      );
+
+    }
+
+
+    /*
+      ==========================================
+      画像圧縮
+      ==========================================
+    */
+
+    async function compressImage(file) {
+
+      if (
+        file.size >
+        MAX_ORIGINAL_SIZE
+      ) {
+
+        throw new Error(
+          "画像は5MB以下にしてください"
+        );
+
+      }
+
+      const bitmap =
+        await createImageBitmap(file);
+
+      let width =
+        bitmap.width;
+
+      let height =
+        bitmap.height;
+
+
+      /*
+        長辺を1600px以下にする
+      */
+
+      const scale =
+        Math.min(
+          1,
+          MAX_IMAGE_SIDE /
+          Math.max(width, height)
+        );
+
+      width =
+        Math.round(width * scale);
+
+      height =
+        Math.round(height * scale);
+
+
+      const canvas =
+        document.createElement("canvas");
+
+      canvas.width =
+        width;
+
+      canvas.height =
+        height;
+
+
+      const ctx =
+        canvas.getContext("2d");
+
+      ctx.drawImage(
+        bitmap,
+        0,
+        0,
+        width,
+        height
       );
 
 
-    const sendButton =
-      document.getElementById(
-        "sendButton"
+      /*
+        JPEG品質を下げながら
+        650KB以下を目指す
+      */
+
+      const qualities =
+        [
+          0.85,
+          0.80,
+          0.75,
+          0.70,
+          0.65,
+          0.60,
+          0.55,
+          0.50
+        ];
+
+
+      for (
+        const quality of qualities
+      ) {
+
+        const blob =
+          await new Promise(
+            (resolve) => {
+
+              canvas.toBlob(
+                resolve,
+                "image/jpeg",
+                quality
+              );
+
+            }
+          );
+
+
+        if (
+          blob &&
+          blob.size <=
+          MAX_COMPRESSED_SIZE
+        ) {
+
+          return blob;
+
+        }
+
+      }
+
+
+      /*
+        まだ大きい場合は
+        画像サイズ自体をさらに下げる
+      */
+
+      let currentWidth =
+        width;
+
+      let currentHeight =
+        height;
+
+
+      for (
+        let i = 0;
+        i < 4;
+        i++
+      ) {
+
+        currentWidth =
+          Math.round(
+            currentWidth * 0.8
+          );
+
+        currentHeight =
+          Math.round(
+            currentHeight * 0.8
+          );
+
+
+        canvas.width =
+          currentWidth;
+
+        canvas.height =
+          currentHeight;
+
+
+        ctx.drawImage(
+          bitmap,
+          0,
+          0,
+          currentWidth,
+          currentHeight
+        );
+
+
+        const blob =
+          await new Promise(
+            (resolve) => {
+
+              canvas.toBlob(
+                resolve,
+                "image/jpeg",
+                0.65
+              );
+
+            }
+          );
+
+
+        if (
+          blob &&
+          blob.size <=
+          MAX_COMPRESSED_SIZE
+        ) {
+
+          return blob;
+
+        }
+
+      }
+
+
+      throw new Error(
+        "画像を十分に圧縮できませんでした"
+      );
+
+    }
+
+
+    /*
+      ==========================================
+      Blob → Base64
+      ==========================================
+    */
+
+    function blobToBase64(blob) {
+
+      return new Promise(
+        (resolve, reject) => {
+
+          const reader =
+            new FileReader();
+
+          reader.onload =
+            () => resolve(
+              reader.result
+            );
+
+          reader.onerror =
+            reject;
+
+          reader.readAsDataURL(blob);
+
+        }
+      );
+
+    }
+
+
+    /*
+      ==========================================
+      期限切れ画像の削除
+      ==========================================
+    */
+
+    function cleanupExpiredImages(
+      data
+    ) {
+
+      const now =
+        Date.now();
+
+
+      for (
+        const [key, message]
+        of Object.entries(data || {})
+      ) {
+
+        if (
+          message.image &&
+          message.imageExpiresAt &&
+          now >=
+          message.imageExpiresAt
+        ) {
+
+          remove(
+            ref(
+              db,
+              "messages/" + key
+            )
+          ).catch(
+            (error) => {
+
+              console.error(
+                "画像削除エラー:",
+                error
+              );
+
+            }
+          );
+
+        }
+
+      }
+
+    }
+
+
+    /*
+      ==========================================
+      メッセージ表示
+      ==========================================
+    */
+
+    function renderMessages(
+      data
+    ) {
+
+      messagesElement.innerHTML = "";
+
+
+      const entries =
+        Object.entries(data || {});
+
+
+      entries.sort(
+        (a, b) => {
+
+          const timeA =
+            a[1].timestamp || 0;
+
+          const timeB =
+            b[1].timestamp || 0;
+
+          return timeA - timeB;
+
+        }
       );
 
 
-    async function sendMessage() {
+      for (
+        const [key, message]
+        of entries
+      ) {
+
+        /*
+          期限切れ画像は表示しない
+        */
+
+        if (
+          message.image &&
+          message.imageExpiresAt &&
+          Date.now() >=
+          message.imageExpiresAt
+        ) {
+
+          continue;
+
+        }
+
+
+        const div =
+          document.createElement("div");
+
+        div.className =
+          "message";
+
+
+        const name =
+          document.createElement("div");
+
+        name.className =
+          "messageName";
+
+        name.textContent =
+          message.name ||
+          "名無し";
+
+
+        const time =
+          document.createElement("span");
+
+        time.className =
+          "messageTime";
+
+        time.textContent =
+          message.time || "";
+
+
+        name.appendChild(time);
+
+
+        div.appendChild(name);
+
+
+        /*
+          テキスト
+        */
+
+        if (message.text) {
+
+          const text =
+            document.createElement("div");
+
+          text.className =
+            "messageText";
+
+          text.textContent =
+            message.text;
+
+          div.appendChild(text);
+
+        }
+
+
+        /*
+          画像
+        */
+
+        if (message.image) {
+
+          const image =
+            document.createElement("img");
+
+          image.className =
+            "messageImage";
+
+          image.src =
+            message.image;
+
+          image.alt =
+            "送信された画像";
+
+          image.loading =
+            "lazy";
+
+          div.appendChild(image);
+
+        }
+
+
+        /*
+          自分のメッセージだけ削除可能
+        */
+
+        if (
+          message.userId === userId
+        ) {
+
+          const deleteButton =
+            document.createElement("button");
+
+          deleteButton.className =
+            "deleteButton";
+
+          deleteButton.textContent =
+            "削除";
+
+          deleteButton.addEventListener(
+            "click",
+            async () => {
+
+              if (
+                confirm(
+                  "このメッセージを削除しますか？"
+                )
+              ) {
+
+                await remove(
+                  ref(
+                    db,
+                    "messages/" + key
+                  )
+                );
+
+              }
+
+            }
+          );
+
+          div.appendChild(
+            deleteButton
+          );
+
+        }
+
+
+        messagesElement.appendChild(
+          div
+        );
+
+      }
+
+
+      /*
+        一番下へ
+      */
+
+      messagesElement.scrollTop =
+        messagesElement.scrollHeight;
+
+    }
+
+
+    /*
+      ==========================================
+      テキスト送信
+      ==========================================
+    */
+
+    async function sendText() {
+
+      const text =
+        messageInput.value.trim();
 
       const name =
         nameInput.value.trim();
 
 
-      const text =
-        messageInput.value.trim();
-
-
       if (!name) {
 
         alert(
-          "名前を入力してください"
+          "先に名前を設定してください"
         );
-
-        nameInput.focus();
 
         return;
 
@@ -525,75 +1074,56 @@
       }
 
 
-      const now =
-        new Date();
-
-
-      const time =
-        now.toLocaleTimeString(
-          "ja-JP",
-          {
-            hour: "2-digit",
-            minute: "2-digit"
-          }
+      const messageRef =
+        push(
+          ref(db, "messages")
         );
 
 
-      try {
-
-        await push(
-          messagesRef,
-          {
-
-            name: name,
-
-            text: text,
-
-            time: time,
-
-            userId: userId,
-
-            timestamp:
-              Date.now()
-
-          }
-        );
+      await set(
+        messageRef,
+        {
+          name,
+          text,
+          time:
+            getCurrentTime(),
+          timestamp:
+            serverTimestamp(),
+          userId
+        }
+      );
 
 
-        messageInput.value = "";
-
-        messageInput.focus();
-
-
-      } catch (error) {
-
-        console.error(error);
-
-        alert(
-          "送信できませんでした。Firebaseの設定を確認してください。"
-        );
-
-      }
+      messageInput.value =
+        "";
 
     }
 
 
-
     sendButton.addEventListener(
       "click",
-      sendMessage
+      sendText
     );
 
+
+    /*
+      ==========================================
+      Enter送信
+      ==========================================
+    */
 
     messageInput.addEventListener(
       "keydown",
       (event) => {
 
         if (
-          event.key === "Enter"
+          event.key === "Enter" &&
+          !event.shiftKey
         ) {
 
-          sendMessage();
+          event.preventDefault();
+
+          sendText();
 
         }
 
@@ -601,218 +1131,321 @@
     );
 
 
-
-    /* ========================= */
-    /* メッセージ表示 */
-    /* ========================= */
-
-    const chatBox =
-      document.getElementById(
-        "chatBox"
-      );
-
-
-    onValue(
-      messagesRef,
-      (snapshot) => {
-
-        chatBox.innerHTML = "";
-
-
-        snapshot.forEach(
-          (child) => {
-
-            const data =
-              child.val();
-
-
-            const message =
-              document.createElement(
-                "div"
-              );
-
-
-            message.className =
-              "message";
-
-
-            /* ヘッダー */
-
-            const header =
-              document.createElement(
-                "div"
-              );
-
-
-            header.className =
-              "messageHeader";
-
-
-            /* 名前 */
-
-            const name =
-              document.createElement(
-                "span"
-              );
-
-
-            name.className =
-              "name";
-
-
-            name.textContent =
-              data.name || "名無し";
-
-
-            header.appendChild(
-              name
-            );
-
-
-            /* 時刻 */
-
-            const time =
-              document.createElement(
-                "span"
-              );
-
-
-            time.className =
-              "time";
-
-
-            time.textContent =
-              data.time || "";
-
-
-            header.appendChild(
-              time
-            );
-
-
-            /* 削除 */
-
-            if (
-              data.userId ===
-              userId
-            ) {
-
-              const deleteButton =
-                document.createElement(
-                  "button"
-                );
-
-
-              deleteButton.className =
-                "deleteButton";
-
-
-              deleteButton.textContent =
-                "削除";
-
-
-              deleteButton.addEventListener(
-                "click",
-                async () => {
-
-                  const ok =
-                    confirm(
-                      "このメッセージを削除しますか？"
-                    );
-
-
-                  if (!ok) return;
-
-
-                  try {
-
-                    await remove(
-                      ref(
-                        db,
-                        "messages/" +
-                        child.key
-                      )
-                    );
-
-                  } catch (error) {
-
-                    console.error(
-                      error
-                    );
-
-                    alert(
-                      "削除できませんでした"
-                    );
-
-                  }
-
-                }
-              );
-
-
-              header.appendChild(
-                deleteButton
-              );
-
-            }
-
-
-            /* 本文 */
-
-            const text =
-              document.createElement(
-                "div"
-              );
-
-
-            text.textContent =
-              data.text || "";
-
-
-            message.appendChild(
-              header
-            );
-
-
-            message.appendChild(
-              text
-            );
-
-
-            chatBox.appendChild(
-              message
-            );
-
-          }
-        );
-
-
-        /* 一番下へ */
-
-        chatBox.scrollTop =
-          chatBox.scrollHeight;
+    /*
+      ==========================================
+      画像選択
+      ==========================================
+    */
+
+    imageButton.addEventListener(
+      "click",
+      () => {
+
+        imageInput.click();
 
       }
     );
 
 
+    imageInput.addEventListener(
+      "change",
+      async () => {
 
-    /* ========================= */
-    /* ページを更新しても */
-    /* このタブでは入室状態を維持 */
-    /* ========================= */
+        const file =
+          imageInput.files[0];
 
-    if (
-      sessionStorage.getItem(
-        "hakunChatUnlocked"
-      ) === "true"
+        if (!file) {
+
+          return;
+
+        }
+
+
+        const name =
+          nameInput.value.trim();
+
+
+        if (!name) {
+
+          alert(
+            "先に名前を設定してください"
+          );
+
+          imageInput.value =
+            "";
+
+          return;
+
+        }
+
+
+        if (
+          !file.type.startsWith("image/")
+        ) {
+
+          alert(
+            "画像ファイルを選択してください"
+          );
+
+          imageInput.value =
+            "";
+
+          return;
+
+        }
+
+
+        try {
+
+          sendButton.disabled =
+            true;
+
+          imageButton.disabled =
+            true;
+
+
+          statusElement.textContent =
+            "画像を圧縮中...";
+
+
+          const compressed =
+            await compressImage(file);
+
+
+          statusElement.textContent =
+            "画像をアップロード中...";
+
+
+          const base64 =
+            await blobToBase64(
+              compressed
+            );
+
+
+          const expiresAt =
+            Date.now() +
+            IMAGE_EXPIRE_TIME;
+
+
+          const messageRef =
+            push(
+              ref(db, "messages")
+            );
+
+
+          await set(
+            messageRef,
+            {
+              name,
+              text: "",
+              image: base64,
+              imageExpiresAt:
+                expiresAt,
+              time:
+                getCurrentTime(),
+              timestamp:
+                serverTimestamp(),
+              userId
+            }
+          );
+
+
+          statusElement.textContent =
+            "画像を送信しました（1時間で削除）";
+
+
+        } catch (error) {
+
+          console.error(error);
+
+          alert(
+            error.message ||
+            "画像の送信に失敗しました"
+          );
+
+          statusElement.textContent =
+            "画像送信に失敗しました";
+
+        } finally {
+
+          sendButton.disabled =
+            false;
+
+          imageButton.disabled =
+            false;
+
+          imageInput.value =
+            "";
+
+        }
+
+      }
+    );
+
+
+    /*
+      ==========================================
+      Online Presence
+      ==========================================
+    */
+
+    let presenceRef;
+
+
+    function updatePresenceName(
+      name
     ) {
 
-      login.style.display =
-        "none";
+      if (!presenceRef) {
 
-      chat.style.display =
-        "block";
+        return;
+
+      }
+
+      set(
+        presenceRef,
+        {
+          name,
+          online: true,
+          lastChanged:
+            serverTimestamp()
+        }
+      );
+
+    }
+
+
+    async function setupPresence() {
+
+      const connectedRef =
+        ref(
+          db,
+          ".info/connected"
+        );
+
+
+      presenceRef =
+        ref(
+          db,
+          "presence/" + userId
+        );
+
+
+      onValue(
+        connectedRef,
+        async (snapshot) => {
+
+          if (
+            snapshot.val() !== true
+          ) {
+
+            return;
+
+          }
+
+
+          const name =
+            nameInput.value.trim() ||
+            "名無し";
+
+
+          await onDisconnect(
+            presenceRef
+          ).set({
+            name,
+            online: false,
+            lastChanged:
+              serverTimestamp()
+          });
+
+
+          await set(
+            presenceRef,
+            {
+              name,
+              online: true,
+              lastChanged:
+                serverTimestamp()
+            }
+          );
+
+        }
+      );
+
+
+      onValue(
+        ref(db, "presence"),
+        (snapshot) => {
+
+          const data =
+            snapshot.val() || {};
+
+
+          const onlineNames =
+            Object.values(data)
+              .filter(
+                user =>
+                  user.online === true
+              )
+              .map(
+                user =>
+                  user.name || "名無し"
+              );
+
+
+          onlineUsersElement.textContent =
+            `オンライン: ${onlineNames.length}人` +
+            (
+              onlineNames.length
+                ? " — " +
+                  onlineNames.join("、")
+                : ""
+            );
+
+        }
+      );
+
+    }
+
+
+    /*
+      ==========================================
+      Chat Start
+      ==========================================
+    */
+
+    function startChat() {
+
+      setupPresence();
+
+
+      onValue(
+        ref(db, "messages"),
+        (snapshot) => {
+
+          const data =
+            snapshot.val() || {};
+
+
+          /*
+            期限切れ画像を削除
+          */
+
+          cleanupExpiredImages(
+            data
+          );
+
+
+          /*
+            メッセージ表示
+          */
+
+          renderMessages(
+            data
+          );
+
+        }
+      );
 
     }
 
