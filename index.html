@@ -42,7 +42,8 @@
       box-shadow: 0 5px 25px rgba(0,0,0,0.15);
     }
 
-    #loginBox {
+    #loginBox,
+    #lockBox {
       text-align: center;
     }
 
@@ -65,13 +66,7 @@
       font-size: 13px;
     }
 
-    #lockBox {
-      text-align: center;
-    }
-
-    #lockBox input,
-    #createRoomName,
-    #createRoomPassword {
+    #lockBox input {
       width: 100%;
       padding: 12px;
       margin-top: 15px;
@@ -355,6 +350,24 @@
       margin-top: 8px;
     }
 
+    #passwordOption {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    #passwordOption input {
+      width: 18px;
+      height: 18px;
+    }
+
+    #createRoomPassword:disabled {
+      background: #eee;
+      color: #999;
+    }
+
     #roomPasswordScreen {
       position: fixed;
       inset: 0;
@@ -414,8 +427,6 @@
 
 <body>
 
-  <!-- Googleログイン -->
-
   <div id="loginScreen">
     <div id="loginBox">
       <h2>Hakun Chat</h2>
@@ -431,8 +442,6 @@
 ```
 
   </div>
-
-  <!-- 既存のパスワードロック -->
 
   <div id="lockScreen" style="display:none;">
     <div id="lockBox">
@@ -458,8 +467,6 @@
 
   </div>
 
-  <!-- 部屋一覧 -->
-
   <div id="roomScreen" style="display:none;">
     <div id="roomBox">
 
@@ -480,6 +487,18 @@
     maxlength="30"
     placeholder="部屋名（30文字以内）"
   >
+
+  <div id="passwordOption">
+    <input
+      id="useRoomPassword"
+      type="checkbox"
+      checked
+    >
+
+    <label for="useRoomPassword">
+      🔐 パスワードを設定する
+    </label>
+  </div>
 
   <input
     id="createRoomPassword"
@@ -502,28 +521,29 @@
     部屋を読み込み中...
   </div>
 
-  <button id="logoutFromRoomButton" style="
-    width:100%;
-    margin-top:15px;
-    padding:10px;
-    border:none;
-    border-radius:8px;
-    background:#eee;
-    cursor:pointer;
-  ">
+  <button
+    id="logoutFromRoomButton"
+    style="
+      width:100%;
+      margin-top:15px;
+      padding:10px;
+      border:none;
+      border-radius:8px;
+      background:#eee;
+      cursor:pointer;
+    "
+  >
     ログアウト
   </button>
 
   <div id="version">
-    Hakun Chat v1.8.0
+    Hakun Chat v1.8.1
   </div>
 
 </div>
 ```
 
   </div>
-
-  <!-- 部屋パスワード -->
 
   <div id="roomPasswordScreen">
     <div id="roomPasswordBox">
@@ -555,8 +575,6 @@
 ```
 
   </div>
-
-  <!-- チャット -->
 
   <div id="app">
 
@@ -642,19 +660,13 @@
 <div id="status"></div>
 
 <div id="version">
-  Hakun Chat v1.8.0
+  Hakun Chat v1.8.1
 </div>
 ```
 
   </div>
 
   <script type="module">
-
-    /*
-    ==========================================
-    Firebase
-    ==========================================
-    */
 
     import { initializeApp } from
       "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
@@ -703,24 +715,12 @@
       );
 
 
-    /*
-    ==========================================
-    Authentication
-    ==========================================
-    */
-
     const auth =
       getAuth(app);
 
     const googleProvider =
       new GoogleAuthProvider();
 
-
-    /*
-    ==========================================
-    設定
-    ==========================================
-    */
 
     const PASSWORD =
       "fackfack";
@@ -737,12 +737,6 @@
     const MAX_IMAGE_SIDE =
       1600;
 
-
-    /*
-    ==========================================
-    DOM
-    ==========================================
-    */
 
     const loginScreen =
       document.getElementById("loginScreen");
@@ -819,6 +813,9 @@
     const createRoomPassword =
       document.getElementById("createRoomPassword");
 
+    const useRoomPassword =
+      document.getElementById("useRoomPassword");
+
     const createRoomButton =
       document.getElementById("createRoomButton");
 
@@ -853,21 +850,8 @@
       document.getElementById("roomPasswordError");
 
 
-    /*
-    ==========================================
-    User
-    ==========================================
-    */
-
     let currentUser = null;
     let userId = null;
-
-
-    /*
-    ==========================================
-    Room
-    ==========================================
-    */
 
     let currentRoomId = null;
     let currentRoomData = null;
@@ -875,34 +859,15 @@
     let pendingRoomId = null;
     let pendingRoomData = null;
 
-
-    /*
-    ==========================================
-    TAB ID
-    ==========================================
-    */
-
     const tabId =
       crypto.randomUUID();
 
-
-    /*
-    ==========================================
-    Name
-    ==========================================
-    */
 
     nameInput.value =
       localStorage.getItem(
         "hakunChatName"
       ) || "";
 
-
-    /*
-    ==========================================
-    Presence
-    ==========================================
-    */
 
     let presenceRef = null;
 
@@ -1253,12 +1218,6 @@
     }
 
 
-    /*
-    ==========================================
-    SHA-256
-    ==========================================
-    */
-
     async function hashPassword(
       password
     ) {
@@ -1291,12 +1250,6 @@
 
     }
 
-
-    /*
-    ==========================================
-    Google Login
-    ==========================================
-    */
 
     googleLoginButton.addEventListener(
       "click",
@@ -1380,12 +1333,6 @@
     );
 
 
-    /*
-    ==========================================
-    Auth状態監視
-    ==========================================
-    */
-
     onAuthStateChanged(
       auth,
       user => {
@@ -1463,12 +1410,6 @@
     );
 
 
-    /*
-    ==========================================
-    部屋画面
-    ==========================================
-    */
-
     function showRoomScreen() {
 
       roomScreen.style.display =
@@ -1481,12 +1422,6 @@
 
     }
 
-
-    /*
-    ==========================================
-    部屋一覧
-    ==========================================
-    */
 
     function loadRooms() {
 
@@ -1558,7 +1493,12 @@
               "roomName";
 
             name.textContent =
-              "🏠 " + room.name;
+              (
+                room.passwordHash
+                  ? "🔐 "
+                  : "🔓 "
+              ) +
+              room.name;
 
             item.appendChild(
               name
@@ -1573,10 +1513,26 @@
             meta.className =
               "roomMeta";
 
-            meta.textContent =
+            if (
               room.ownerId === userId
-                ? "👑 あなたが作成した部屋"
-                : "🔐 パスワード付き";
+            ) {
+
+              meta.textContent =
+                "👑 あなたが作成した部屋";
+
+            } else if (
+              room.passwordHash
+            ) {
+
+              meta.textContent =
+                "🔐 パスワード付き";
+
+            } else {
+
+              meta.textContent =
+                "🔓 パスワードなし";
+
+            }
 
             item.appendChild(
               meta
@@ -1595,10 +1551,23 @@
               "click",
               () => {
 
-                openRoomPassword(
-                  roomId,
-                  room
-                );
+                if (
+                  room.passwordHash
+                ) {
+
+                  openRoomPassword(
+                    roomId,
+                    room
+                  );
+
+                } else {
+
+                  enterRoom(
+                    roomId,
+                    room
+                  );
+
+                }
 
               }
             );
@@ -1622,6 +1591,7 @@
 
               deleteButton.textContent =
                 "削除";
+
 
               deleteButton.addEventListener(
                 "click",
@@ -1694,11 +1664,36 @@
     }
 
 
-    /*
-    ==========================================
-    部屋作成
-    ==========================================
-    */
+    useRoomPassword.addEventListener(
+      "change",
+      () => {
+
+        if (
+          useRoomPassword.checked
+        ) {
+
+          createRoomPassword.disabled =
+            false;
+
+          createRoomPassword.placeholder =
+            "部屋パスワード（4～30文字）";
+
+        } else {
+
+          createRoomPassword.disabled =
+            true;
+
+          createRoomPassword.value =
+            "";
+
+          createRoomPassword.placeholder =
+            "パスワードなし";
+
+        }
+
+      }
+    );
+
 
     createRoomButton.addEventListener(
       "click",
@@ -1710,6 +1705,9 @@
         const password =
           createRoomPassword.value;
 
+
+        roomCreateStatus.style.color =
+          "#d00";
 
         roomCreateStatus.textContent =
           "";
@@ -1746,8 +1744,11 @@
 
 
         if (
-          password.length < 4 ||
-          password.length > 30
+          useRoomPassword.checked &&
+          (
+            password.length < 4 ||
+            password.length > 30
+          )
         ) {
 
           roomCreateStatus.textContent =
@@ -1767,10 +1768,29 @@
             "作成中...";
 
 
-          const passwordHash =
-            await hashPassword(
-              password
-            );
+          const roomData = {
+
+            name,
+
+            ownerId:
+              userId,
+
+            createdAt:
+              serverTimestamp()
+
+          };
+
+
+          if (
+            useRoomPassword.checked
+          ) {
+
+            roomData.passwordHash =
+              await hashPassword(
+                password
+              );
+
+          }
 
 
           const roomRef =
@@ -1784,19 +1804,7 @@
 
           await set(
             roomRef,
-            {
-
-              name,
-
-              passwordHash,
-
-              ownerId:
-                userId,
-
-              createdAt:
-                serverTimestamp()
-
-            }
+            roomData
           );
 
 
@@ -1816,11 +1824,7 @@
 
           await enterRoom(
             roomRef.key,
-            {
-              name,
-              passwordHash,
-              ownerId: userId
-            }
+            roomData
           );
 
 
@@ -1850,12 +1854,6 @@
       }
     );
 
-
-    /*
-    ==========================================
-    部屋パスワード画面
-    ==========================================
-    */
 
     function openRoomPassword(
       roomId,
@@ -2004,12 +2002,6 @@
     );
 
 
-    /*
-    ==========================================
-    部屋入室
-    ==========================================
-    */
-
     async function enterRoom(
       roomId,
       room
@@ -2069,21 +2061,7 @@
     }
 
 
-    /*
-    ==========================================
-    部屋チャット開始
-    ==========================================
-    */
-
-    let roomChatStarted =
-      false;
-
-
     function startRoomChat() {
-
-      roomChatStarted =
-        false;
-
 
       lastPresenceData =
         {};
@@ -2097,10 +2075,6 @@
 
 
       setupPresence();
-
-
-      roomChatStarted =
-        true;
 
 
       onValue(
@@ -2141,12 +2115,6 @@
 
     }
 
-
-    /*
-    ==========================================
-    部屋退出
-    ==========================================
-    */
 
     leaveRoomButton.addEventListener(
       "click",
@@ -2204,12 +2172,6 @@
     }
 
 
-    /*
-    ==========================================
-    Logout
-    ==========================================
-    */
-
     async function logout() {
 
       try {
@@ -2251,12 +2213,6 @@
       logout
     );
 
-
-    /*
-    ==========================================
-    Password
-    ==========================================
-    */
 
     function unlock() {
 
@@ -2307,12 +2263,6 @@
     );
 
 
-    /*
-    ==========================================
-    Utility
-    ==========================================
-    */
-
     function getCurrentTime() {
 
       const now =
@@ -2328,12 +2278,6 @@
 
     }
 
-
-    /*
-    ==========================================
-    画像圧縮
-    ==========================================
-    */
 
     async function compressImage(file) {
 
@@ -2536,12 +2480,6 @@
     }
 
 
-    /*
-    ==========================================
-    Blob → Base64
-    ==========================================
-    */
-
     function blobToBase64(blob) {
 
       return new Promise(
@@ -2570,12 +2508,6 @@
 
     }
 
-
-    /*
-    ==========================================
-    期限切れ画像削除
-    ==========================================
-    */
 
     function cleanupExpiredImages(
       data
@@ -2629,12 +2561,6 @@
 
     }
 
-
-    /*
-    ==========================================
-    メッセージ表示
-    ==========================================
-    */
 
     function renderMessages(
       data
@@ -2703,7 +2629,6 @@
         name.className =
           "messageName";
 
-
         name.textContent =
           message.name ||
           "名無し";
@@ -2717,22 +2642,12 @@
         status.className =
           "userStatus";
 
-
-        if (
+        status.textContent =
           isUserOnline(
             message.userId
           )
-        ) {
-
-          status.textContent =
-            "🟢";
-
-        } else {
-
-          status.textContent =
-            "⚫";
-
-        }
+            ? "🟢"
+            : "⚫";
 
 
         name.appendChild(
@@ -2755,7 +2670,6 @@
         name.appendChild(
           time
         );
-
 
         div.appendChild(
           name
@@ -2833,35 +2747,38 @@
             async () => {
 
               if (
-                confirm(
+                !confirm(
                   "このメッセージを削除しますか？"
                 )
               ) {
 
-                try {
+                return;
 
-                  await remove(
-                    ref(
-                      db,
-                      "rooms/" +
-                      currentRoomId +
-                      "/messages/" +
-                      key
-                    )
-                  );
+              }
 
-                } catch (error) {
 
-                  console.error(
-                    "削除エラー:",
-                    error
-                  );
+              try {
 
-                  alert(
-                    "削除に失敗しました"
-                  );
+                await remove(
+                  ref(
+                    db,
+                    "rooms/" +
+                    currentRoomId +
+                    "/messages/" +
+                    key
+                  )
+                );
 
-                }
+              } catch (error) {
+
+                console.error(
+                  "削除エラー:",
+                  error
+                );
+
+                alert(
+                  "削除に失敗しました"
+                );
 
               }
 
@@ -2888,12 +2805,6 @@
 
     }
 
-
-    /*
-    ==========================================
-    テキスト送信
-    ==========================================
-    */
 
     async function sendText() {
 
@@ -3002,12 +2913,6 @@
     );
 
 
-    /*
-    ==========================================
-    Enter送信
-    ==========================================
-    */
-
     messageInput.addEventListener(
       "keydown",
       event => {
@@ -3026,12 +2931,6 @@
       }
     );
 
-
-    /*
-    ==========================================
-    名前保存
-    ==========================================
-    */
 
     saveName.addEventListener(
       "click",
@@ -3076,12 +2975,6 @@
     );
 
 
-    /*
-    ==========================================
-    画像送信
-    ==========================================
-    */
-
     imageButton.addEventListener(
       "click",
       () => {
@@ -3101,9 +2994,7 @@
 
 
         if (!file) {
-
           return;
-
         }
 
 
