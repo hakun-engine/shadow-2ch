@@ -728,9 +728,6 @@
     const IMAGE_EXPIRE_TIME =
       60 * 60 * 1000;
 
-    const MAX_ORIGINAL_SIZE =
-      5 * 1024 * 1024;
-
     const MAX_COMPRESSED_SIZE =
       650 * 1024;
 
@@ -2280,18 +2277,6 @@
 
 
     async function compressImage(file) {
-
-      if (
-        file.size >
-        MAX_ORIGINAL_SIZE
-      ) {
-
-        throw new Error(
-          "画像は5MB以下にしてください"
-        );
-
-      }
-
 
       const bitmap =
         await createImageBitmap(file);
