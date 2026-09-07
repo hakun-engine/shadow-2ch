@@ -474,11 +474,69 @@
       margin-top: 8px;
       color: #666;
     }
+
+    #meltdownButton {
+      width: 100%;
+      margin-top: 12px;
+      padding: 11px;
+      border: none;
+      border-radius: 8px;
+      background: #7a0000;
+      color: white;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #meltdownButton:hover {
+      background: #a00000;
+    }
+
+    #maintenanceScreen {
+      position: fixed;
+      inset: 0;
+      z-index: 20000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: #f2f2f2;
+      padding: 20px;
+    }
+
+    #maintenanceBox {
+      width: min(92%, 500px);
+      padding: 35px 25px;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+      text-align: center;
+    }
+
+    #maintenanceBox h2 {
+      margin-top: 0;
+      margin-bottom: 15px;
+    }
+
+    #maintenanceBox p {
+      color: #666;
+      line-height: 1.8;
+      margin: 0;
+    }
   </style>
 
 </head>
 
 <body>
+
+  <div id="maintenanceScreen">
+    <div id="maintenanceBox">
+      <h2>中学生向け学習・コミュニケーションサービス</h2>
+      <p>
+        現在、サービスは一時的に利用できません。<br>
+        しばらくしてから再度アクセスしてください。
+      </p>
+    </div>
+  </div>
 
   <div id="loginScreen">
     <div id="loginBox">
@@ -543,6 +601,10 @@
 
     <div id="adminStatus"></div>
 
+    <button id="meltdownButton">
+      ☢️ MELTDOWN
+    </button>
+
   </div>
 
   <div class="sectionTitle">
@@ -605,7 +667,7 @@
   </button>
 
   <div id="version">
-    Hakun Chat v2.0.0
+    Hakun Chat v2.0.1
   </div>
 
 </div>
@@ -718,7 +780,7 @@
 <div id="status"></div>
 
 <div id="version">
-  Hakun Chat v2.0.0
+  Hakun Chat v2.0.1
 </div>
 
   </div>
@@ -774,6 +836,22 @@
 
     const auth =
       getAuth(app);
+
+    onValue(
+      ref(db, "system/maintenance"),
+      snapshot => {
+        maintenanceMode =
+          snapshot.val() === true;
+
+        applyMaintenanceState();
+      },
+      error => {
+        console.error(
+          "メンテナンス状態取得エラー:",
+          error
+        );
+      }
+    );
 
     const googleProvider =
       new GoogleAuthProvider();
@@ -915,6 +993,12 @@
     const adminStatus =
       document.getElementById("adminStatus");
 
+    const meltdownButton =
+      document.getElementById("meltdownButton");
+
+    const maintenanceScreen =
+      document.getElementById("maintenanceScreen");
+
 
     let currentUser = null;
     let userId = null;
@@ -947,10 +1031,33 @@
     let lastMessageData = null;
 
 
+    let maintenanceMode = false;
+
     function isAdmin() {
 
       return userId === ADMIN_UID;
 
+    }
+
+
+    function applyMaintenanceState() {
+      if (maintenanceMode && !isAdmin()) {
+        maintenanceScreen.style.display = "flex";
+      } else {
+        maintenanceScreen.style.display = "none";
+      }
+
+      if (isAdmin()) {
+        meltdownButton.textContent =
+          maintenanceMode
+            ? "🟢 サービス再開"
+            : "☢️ MELTDOWN";
+
+        meltdownButton.style.background =
+          maintenanceMode
+            ? "#087a20"
+            : "#7a0000";
+      }
     }
 
 
@@ -985,6 +1092,8 @@
           "none";
 
       }
+
+      applyMaintenanceState();
 
     }
 
@@ -2360,6 +2469,54 @@
       roomPasswordInput.focus();
 
     }
+
+
+    meltdownButton.addEventListener(
+      "click",
+      async () => {
+        if (!isAdmin()) {
+          alert("管理者権限がありません");
+          return;
+        }
+
+        const nextState =
+          !maintenanceMode;
+
+        const message = nextState
+          ? "MELTDOWNを実行しますか？\n全ユーザーの画面が一時停止画面になります。\nデータは削除されません。"
+          : "サービスを再開しますか？";
+
+        if (!confirm(message)) {
+          return;
+        }
+
+        try {
+          meltdownButton.disabled = true;
+
+          await set(
+            ref(db, "system/maintenance"),
+            nextState
+          );
+
+          adminStatus.textContent =
+            nextState
+              ? "サービスを停止しました。データは削除されていません。"
+              : "サービスを再開しました。";
+
+        } catch (error) {
+          console.error(
+            "メンテナンス状態変更エラー:",
+            error
+          );
+
+          alert(
+            "サービス状態の変更に失敗しました"
+          );
+        } finally {
+          meltdownButton.disabled = false;
+        }
+      }
+    );
 
 
     roomPasswordEnter.addEventListener(
